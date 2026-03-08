@@ -1,15 +1,15 @@
-package authgate
+package authara
 
 import "net/http"
 
-// Config defines the configuration required to initialize the AuthGate SDK.
+// Config defines the configuration required to initialize the Authara SDK.
 //
 // All fields are required. The SDK performs strict validation when calling
 // New and will return an error if any required field is missing or invalid.
 type Config struct {
-	// Issuer is the expected issuer (iss claim) of AuthGate-issued access tokens.
+	// Issuer is the expected issuer (iss claim) of Authara-issued access tokens.
 	//
-	// This must exactly match the issuer configured in the AuthGate server,
+	// This must exactly match the issuer configured in the Authara server,
 	// including scheme and host (e.g. "https://example.com").
 	Issuer string
 
@@ -25,13 +25,13 @@ type Config struct {
 	// provided to support key rotation.
 	Keys map[string][]byte
 
-	// AuthGateBaseURL enables refresh behavior in RequireAuth.
+	// AutharaBaseURL enables refresh behavior in RequireAuth.
 	//
-	// Example: "https://example.com", or if you use Docker, e.g.: "authgate:3000"
+	// Example: "https://example.com", or if you use Docker, e.g.: "authara:3000"
 	// If empty, RequireAuth will NOT attempt refresh and will behave as today.
-	AuthGateBaseURL string
+	AutharaBaseURL string
 
-	// HTTPClient is used for outbound calls to AuthGate (refresh).
+	// HTTPClient is used for outbound calls to Authara (refresh).
 	// If nil, http.DefaultClient is used.
 	HTTPClient *http.Client
 }

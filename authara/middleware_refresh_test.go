@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func newTestSDKWithRefresh(t *testing.T, authGateBaseURL string, hc *http.Client) (*SDK, map[string][]byte) {
+func newTestSDKWithRefresh(t *testing.T, autharaBaseURL string, hc *http.Client) (*SDK, map[string][]byte) {
 	t.Helper()
 
 	key := []byte("super-secret")
@@ -27,7 +27,7 @@ func newTestSDKWithRefresh(t *testing.T, authGateBaseURL string, hc *http.Client
 		t.Fatalf("failed to create sdk: %v", err)
 	}
 
-	sdk.authGateBaseURL = strings.TrimRight(authGateBaseURL, "/")
+	sdk.autharaBaseURL = strings.TrimRight(autharaBaseURL, "/")
 	if hc != nil {
 		sdk.httpClient = hc
 	} else {
@@ -69,16 +69,16 @@ func signAccessToken(t *testing.T, keys map[string][]byte, userID uuid.UUID, rol
 
 func TestRequireAuthWithRefresh_ValidAccessCookie_SkipsRefresh(t *testing.T) {
 	refreshHit := false
-	authGate := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authara := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		refreshHit = true
 		http.Error(w, "should not be called", http.StatusInternalServerError)
 	}))
-	t.Cleanup(authGate.Close)
+	t.Cleanup(authara.Close)
 
-	sdk, keys := newTestSDKWithRefresh(t, authGate.URL, authGate.Client())
+	sdk, keys := newTestSDKWithRefresh(t, authara.URL, authara.Client())
 
 	userID := uuid.New()
-	access := signAccessToken(t, keys, userID, []string{"authgate:user"}, time.Hour)
+	access := signAccessToken(t, keys, userID, []string{"authara:user"}, time.Hour)
 
 	called := false
 	h := sdk.RequireAuthWithRefresh(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func TestRequireAuthWithRefresh_ValidAccessCookie_SkipsRefresh(t *testing.T) {
 		}
 
 		gotRoles, ok := RolesFromContext(r.Context())
-		if !ok || len(gotRoles) != 1 || gotRoles[0] != "authgate:user" {
+		if !ok || len(gotRoles) != 1 || gotRoles[0] != "authara:user" {
 			t.Fatalf("unexpected roles: %v (ok=%v)", gotRoles, ok)
 		}
 	}))
@@ -119,7 +119,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 	var gotCookieHeader string
 	var gotCSRFHeader string
 
-	authGate := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authara := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Basic contract checks
 		if r.Method != http.MethodPost {
 			t.Fatalf("expected POST, got %s", r.Method)
@@ -135,7 +135,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 		gotCSRFHeader = r.Header.Get(CSRFHeaderName)
 
 		// Issue new cookies (access must verify).
-		access := signAccessToken(t, map[string][]byte{"test-kid": []byte("super-secret")}, userID, []string{"authgate:user"}, time.Hour)
+		access := signAccessToken(t, map[string][]byte{"test-kid": []byte("super-secret")}, userID, []string{"authara:user"}, time.Hour)
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     AccessCookieName,
@@ -144,7 +144,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 			HttpOnly: true,
 		})
 		http.SetCookie(w, &http.Cookie{
-			Name:     "authgate_refresh",
+			Name:     "authara_refresh",
 			Value:    "rotated-refresh",
 			Path:     "/",
 			HttpOnly: true,
@@ -152,9 +152,9 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 
 		w.WriteHeader(http.StatusOK)
 	}))
-	t.Cleanup(authGate.Close)
+	t.Cleanup(authara.Close)
 
-	sdk, _ := newTestSDKWithRefresh(t, authGate.URL, authGate.Client())
+	sdk, _ := newTestSDKWithRefresh(t, authara.URL, authara.Client())
 
 	called := false
 	h := sdk.RequireAuthWithRefresh(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +166,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 		}
 
 		gotRoles, ok := RolesFromContext(r.Context())
-		if !ok || len(gotRoles) != 1 || gotRoles[0] != "authgate:user" {
+		if !ok || len(gotRoles) != 1 || gotRoles[0] != "authara:user" {
 			t.Fatalf("unexpected roles: %v (ok=%v)", gotRoles, ok)
 		}
 	}))
@@ -175,7 +175,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 	req.Header.Set("Accept", "text/html")
 
 	// Incoming cookies: refresh + csrf (and no access)
-	req.AddCookie(&http.Cookie{Name: "authgate_refresh", Value: "rt1", Path: "/"})
+	req.AddCookie(&http.Cookie{Name: "authara_refresh", Value: "rt1", Path: "/"})
 	req.AddCookie(&http.Cookie{Name: CSRFCookieName, Value: "csrf123", Path: "/"})
 
 	rec := httptest.NewRecorder()
@@ -185,8 +185,8 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 		t.Fatal("handler should have been called after successful refresh")
 	}
 
-	// Ensure cookies were forwarded to AuthGate refresh call
-	if !strings.Contains(gotCookieHeader, "authgate_refresh=rt1") {
+	// Ensure cookies were forwarded to Authara refresh call
+	if !strings.Contains(gotCookieHeader, "authara_refresh=rt1") {
 		t.Fatalf("expected refresh cookie forwarded, got Cookie=%q", gotCookieHeader)
 	}
 
@@ -207,7 +207,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 		if strings.HasPrefix(sc, AccessCookieName+"=") {
 			hasAccess = true
 		}
-		if strings.HasPrefix(sc, "authgate_refresh=") {
+		if strings.HasPrefix(sc, "authara_refresh=") {
 			hasRefresh = true
 		}
 	}
@@ -226,12 +226,12 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 	userID := uuid.New()
 
 	var issuedAccess string
-	authGate := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authara := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		issuedAccess = signAccessToken(
 			t,
 			map[string][]byte{"test-kid": []byte("super-secret")},
 			userID,
-			[]string{"authgate:user"},
+			[]string{"authara:user"},
 			time.Hour,
 		)
 
@@ -242,7 +242,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 			HttpOnly: true,
 		})
 		http.SetCookie(w, &http.Cookie{
-			Name:     "authgate_refresh",
+			Name:     "authara_refresh",
 			Value:    "rotated-refresh",
 			Path:     "/",
 			HttpOnly: true,
@@ -250,9 +250,9 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 
 		w.WriteHeader(http.StatusOK)
 	}))
-	t.Cleanup(authGate.Close)
+	t.Cleanup(authara.Close)
 
-	sdk, _ := newTestSDKWithRefresh(t, authGate.URL, authGate.Client())
+	sdk, _ := newTestSDKWithRefresh(t, authara.URL, authara.Client())
 
 	h := sdk.RequireAuthWithRefresh(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This is the assertion: downstream code should see the refreshed cookie value.
@@ -272,7 +272,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 
 	req := httptest.NewRequest(http.MethodGet, "/private", nil)
 	req.Header.Set("Accept", "text/html")
-	req.AddCookie(&http.Cookie{Name: "authgate_refresh", Value: "rt1", Path: "/"})
+	req.AddCookie(&http.Cookie{Name: "authara_refresh", Value: "rt1", Path: "/"})
 
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -283,13 +283,13 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 }
 
 func TestRequireAuthWithRefresh_InvalidAccess_RefreshFails_FallsBack_API401(t *testing.T) {
-	authGate := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authara := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate refresh failure (expired/invalid refresh token)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}))
-	t.Cleanup(authGate.Close)
+	t.Cleanup(authara.Close)
 
-	sdk, _ := newTestSDKWithRefresh(t, authGate.URL, authGate.Client())
+	sdk, _ := newTestSDKWithRefresh(t, authara.URL, authara.Client())
 
 	h := sdk.RequireAuthWithRefresh(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatal("handler should not be called when refresh fails")

@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"testing"
@@ -50,7 +50,7 @@ func TestVerify_ValidToken(t *testing.T) {
 
 	claims := accessClaims{
 		SessionID: "session-123",
-		Roles:     []string{"authgate:user"},
+		Roles:     []string{"authara:user"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://auth.example.com",
 			Audience:  []string{"app"},
@@ -71,7 +71,7 @@ func TestVerify_ValidToken(t *testing.T) {
 		t.Fatalf("expected userID %v, got %v", userID, gotUserID)
 	}
 
-	if len(roles) != 1 || roles[0] != "authgate:user" {
+	if len(roles) != 1 || roles[0] != "authara:user" {
 		t.Fatalf("unexpected roles: %v", roles)
 	}
 }
@@ -81,7 +81,7 @@ func TestVerify_ExpiredToken(t *testing.T) {
 
 	claims := accessClaims{
 		SessionID: "session-123",
-		Roles:     []string{"authgate:user"},
+		Roles:     []string{"authara:user"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://auth.example.com",
 			Audience:  []string{"app"},
@@ -103,7 +103,7 @@ func TestVerify_WrongAudience(t *testing.T) {
 
 	claims := accessClaims{
 		SessionID: "session-123",
-		Roles:     []string{"authgate:user"},
+		Roles:     []string{"authara:user"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://auth.example.com",
 			Audience:  []string{"admin"},
@@ -147,7 +147,7 @@ func TestVerify_UnknownKeyID(t *testing.T) {
 
 	claims := accessClaims{
 		SessionID: "session-123",
-		Roles:     []string{"authgate:user"},
+		Roles:     []string{"authara:user"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://auth.example.com",
 			Audience:  []string{"app"},

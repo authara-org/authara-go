@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"errors"
@@ -6,42 +6,42 @@ import (
 	"strings"
 )
 
-// SDK is the main entry point for the AuthGate Go SDK.
+// SDK is the main entry point for the Authara Go SDK.
 //
-// It holds the internal verifier used to validate AuthGate-issued
+// It holds the internal verifier used to validate Authara-issued
 // access tokens and to power the provided HTTP middleware.
 type SDK struct {
 	verifier *verifier
 
-	authGateBaseURL string
-	httpClient      *http.Client
+	autharaBaseURL string
+	httpClient     *http.Client
 }
 
-// New initializes a new AuthGate SDK instance using the provided configuration.
+// New initializes a new Authara SDK instance using the provided configuration.
 //
 // All fields of Config are required. New performs validation and returns
 // an error if the configuration is incomplete or invalid.
 //
 // Example:
 //
-//	sdk, err := authgate.New(authgate.Config{
+//	sdk, err := authara.New(authara.Config{
 //		Issuer:          "https://example.com",
 //		Audience:        "app",
 //		Keys:            keys,
-//		AuthgateBaseURL: "authgate:3000"
+//		AutharaBaseURL: "authara:3000"
 //		HTTPCliet:       nil
 //	})
 func New(cfg Config) (*SDK, error) {
 	if cfg.Issuer == "" {
-		return nil, errors.New("authgate: issuer is required")
+		return nil, errors.New("authara: issuer is required")
 	}
 
 	if cfg.Audience == "" {
-		return nil, errors.New("authgate: audience is required")
+		return nil, errors.New("authara: audience is required")
 	}
 
 	if len(cfg.Keys) == 0 {
-		return nil, errors.New("authgate: at least one key is required")
+		return nil, errors.New("authara: at least one key is required")
 	}
 
 	v, err := newVerifier(cfg)
@@ -55,8 +55,8 @@ func New(cfg Config) (*SDK, error) {
 	}
 
 	return &SDK{
-		verifier:        v,
-		authGateBaseURL: strings.TrimRight(cfg.AuthGateBaseURL, "/"),
-		httpClient:      hc,
+		verifier:       v,
+		autharaBaseURL: strings.TrimRight(cfg.AutharaBaseURL, "/"),
+		httpClient:     hc,
 	}, nil
 }

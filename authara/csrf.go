@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"net/http"
@@ -27,7 +27,7 @@ type LogoutFormData struct {
 // LogoutFormDataFromRequest extracts the CSRF token from the request and
 // returns the data required to render a logout form.
 //
-// The returnTo parameter specifies where AuthGate should redirect the user
+// The returnTo parameter specifies where Authara should redirect the user
 // after a successful logout. If empty, no return_to parameter is added.
 //
 // The boolean return value is false if no CSRF token is present on the request.
@@ -54,7 +54,7 @@ func LogoutFormDataFromRequest(
 	}, true
 }
 
-// CSRFToken returns the CSRF token stored in the AuthGate CSRF cookie.
+// CSRFToken returns the CSRF token stored in the Authara CSRF cookie.
 //
 // The boolean return value is false if the cookie is missing or empty.
 func CSRFToken(req *http.Request) (string, bool) {
@@ -66,7 +66,7 @@ func CSRFToken(req *http.Request) (string, bool) {
 }
 
 // AttachCSRF attaches the given CSRF token to an outgoing HTTP request
-// using the AuthGate CSRF header.
+// using the Authara CSRF header.
 //
 // If the token is empty, the function does nothing.
 func AttachCSRF(req *http.Request, token string) {
@@ -84,7 +84,7 @@ func AttachCSRF(req *http.Request, token string) {
 func CSRFTokenOrPanic(req *http.Request) string {
 	token, ok := CSRFToken(req)
 	if !ok {
-		panic("authgate: CSRF token missing from request")
+		panic("authara: CSRF token missing from request")
 	}
 	return token
 }

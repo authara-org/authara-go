@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"errors"
@@ -64,7 +64,7 @@ func (v *verifier) verify(tokenString string) (uuid.UUID, []string, error) {
 	}
 
 	for _, role := range claims.Roles {
-		if !strings.HasPrefix(role, "authgate:") {
+		if !strings.HasPrefix(role, "authara:") {
 			return uuid.Nil, []string{}, ErrInvalidRoleNamespace
 		}
 	}

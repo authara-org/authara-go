@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"context"
@@ -19,17 +19,17 @@ type ClientOption func(*Client)
 // WithHTTPClient configures the Client to use a custom http.Client.
 //
 // This is useful for setting timeouts, proxies, tracing, or test transports.
-// The provided client is used for all outbound requests to AuthGate.
+// The provided client is used for all outbound requests to Authara.
 func WithHTTPClient(hc *http.Client) ClientOption {
 	return func(c *Client) {
 		c.httpClient = hc
 	}
 }
 
-// Client is a backend-facing AuthGate HTTP client.
+// Client is a backend-facing Authara HTTP client.
 //
 // It is intended for server-side and SSR use cases and provides strict,
-// side-effect-free helpers for calling AuthGate endpoints.
+// side-effect-free helpers for calling Authara endpoints.
 //
 // The Client:
 //   - never refreshes tokens
@@ -41,9 +41,9 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// NewClient creates a new AuthGate backend client.
+// NewClient creates a new Authara backend client.
 //
-// baseURL must point to the AuthGate HTTP endpoint (e.g. "https://auth.example.com").
+// baseURL must point to the Authara HTTP endpoint (e.g. "https://auth.example.com").
 // The base URL is normalized by trimming any trailing slash.
 //
 // Optional ClientOptions may be provided to customize transport behavior.
@@ -65,7 +65,7 @@ func NewClient(baseURL string, opts ...ClientOption) *Client {
 // If out is non-nil, the response body is decoded into it.
 // The response is always returned so callers can inspect status codes.
 //
-// This helper does not apply any AuthGate-specific semantics and does not
+// This helper does not apply any Authara-specific semantics and does not
 // perform retries, refreshes, or error classification.
 func (c *Client) doJSON(req *http.Request, out any) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
@@ -83,7 +83,7 @@ func (c *Client) doJSON(req *http.Request, out any) (*http.Response, error) {
 	return resp, nil
 }
 
-// forwardAccessAuth forwards the AuthGate access cookie from an incoming request.
+// forwardAccessAuth forwards the Authara access cookie from an incoming request.
 //
 // This preserves the caller's authentication context without inspecting,
 // validating, or modifying the token.
@@ -100,14 +100,14 @@ func forwardAccessAuth(req *http.Request, incoming *http.Request) {
 	}
 }
 
-// DoJSONRequest performs a raw HTTP request against the AuthGate API and
+// DoJSONRequest performs a raw HTTP request against the Authara API and
 // optionally decodes a successful JSON response into out.
 //
 // This function is a low-level transport helper intended as an escape hatch
-// for calling AuthGate endpoints that do not yet have first-class helpers.
+// for calling Authara endpoints that do not yet have first-class helpers.
 //
 // Behavior and guarantees:
-//   - Forwards the AuthGate access cookie from the incoming request, if present
+//   - Forwards the Authara access cookie from the incoming request, if present
 //   - Does NOT refresh tokens
 //   - Does NOT retry requests
 //   - Does NOT interpret HTTP status codes
@@ -116,7 +116,7 @@ func forwardAccessAuth(req *http.Request, incoming *http.Request) {
 // Callers are responsible for inspecting the returned HTTP status code and
 // deciding how to handle non-2xx responses.
 //
-// This helper intentionally provides no AuthGate-specific semantics.
+// This helper intentionally provides no Authara-specific semantics.
 func DoJSONRequest[T any](
 	ctx context.Context,
 	client *Client,
@@ -155,7 +155,7 @@ func DoJSONRequest[T any](
 
 // CurrentUser represents the authenticated user's identity attributes.
 //
-// This struct mirrors the response of the AuthGate `/auth/user` endpoint and
+// This struct mirrors the response of the Authara `/auth/user` endpoint and
 // intentionally contains only identity data, not authorization facts.
 type CurrentUser struct {
 	ID        string    `json:"id"`
@@ -175,7 +175,7 @@ type ErrorResponse struct {
 // GetCurrentUser retrieves the identity of the currently authenticated user.
 //
 // The authentication context is forwarded from the incoming request using the
-// AuthGate access cookie. This method does not refresh tokens or retry requests.
+// Authara access cookie. This method does not refresh tokens or retry requests.
 //
 // Return values:
 //   - (*CurrentUser, nil): the request is authenticated and the user exists
@@ -207,12 +207,12 @@ func (c *Client) GetCurrentUser(ctx context.Context, incoming *http.Request) (*C
 
 		if errResp.Error.Code != "" {
 			return nil, fmt.Errorf(
-				"authgate: %s (%s)",
+				"authara: %s (%s)",
 				errResp.Error.Code,
 				errResp.Error.Message,
 			)
 		}
 
-		return nil, fmt.Errorf("authgate: unexpected status %d", resp.StatusCode)
+		return nil, fmt.Errorf("authara: unexpected status %d", resp.StatusCode)
 	}
 }

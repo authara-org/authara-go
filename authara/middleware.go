@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"net/http"
@@ -9,19 +9,19 @@ import (
 )
 
 // RequireAuthWithRefresh returns middleware that enforces authentication and
-// performs a single best-effort refresh via AuthGate when needed.
+// performs a single best-effort refresh via Authara when needed.
 //
 // This middleware behaves like RequireAuth, with one additional step:
 //
 //   - If the access cookie is missing or invalid, the middleware attempts to
-//     refresh the session by calling AuthGate's refresh endpoint.
-//   - If refresh succeeds, AuthGate responds with Set-Cookie headers for the
+//     refresh the session by calling Authara's refresh endpoint.
+//   - If refresh succeeds, Authara responds with Set-Cookie headers for the
 //     rotated refresh token and a new access token.
 //   - The middleware forwards those Set-Cookie headers to the client response,
 //     verifies the newly issued access token, and then proceeds with the CURRENT
 //     request authenticated.
 //
-// If refresh is disabled (SDK not configured with AuthGateBaseURL) or refresh
+// If refresh is disabled (SDK not configured with AutharaBaseURL) or refresh
 // fails, the middleware falls back to the same unauthenticated behavior as
 // RequireAuth:
 //
@@ -31,7 +31,7 @@ import (
 //
 // CSRF:
 //
-// If AuthGate enforces CSRF on refresh, the CSRF token must be available on the
+// If Authara enforces CSRF on refresh, the CSRF token must be available on the
 // incoming request so the middleware can forward it.
 func (s *SDK) RequireAuthWithRefresh(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (s *SDK) RequireAuthWithRefresh(next http.Handler) http.Handler {
 			ctx = withRoles(ctx, roles)
 
 			// Clone the request and update its Cookie header so any downstream
-			// AuthGate client calls during THIS request see the refreshed cookies.
+			// Authara client calls during THIS request see the refreshed cookies.
 			r2 := r.Clone(ctx)
 			applyCookiesToRequest(r2, newCookies)
 
@@ -66,7 +66,7 @@ func (s *SDK) RequireAuthWithRefresh(next http.Handler) http.Handler {
 }
 
 // applyCookiesToRequest overwrites/sets cookies in r based on the cookies returned
-// by AuthGate. It updates the Cookie header so r.Cookie(...) and r.Header.Get("Cookie")
+// by Authara. It updates the Cookie header so r.Cookie(...) and r.Header.Get("Cookie")
 // reflect the new values.
 //
 // This is used to make refreshed cookies immediately visible to downstream code
@@ -103,31 +103,31 @@ func applyCookiesToRequest(r *http.Request, newCookies []*http.Cookie) {
 	r.Header.Set("Cookie", b.String())
 }
 
-// tryRefreshAndVerify attempts to refresh the session via AuthGate using the
+// tryRefreshAndVerify attempts to refresh the session via Authara using the
 // incoming request cookies.
 //
 // On success it:
 //
-//   - forwards AuthGate's Set-Cookie headers to the client response (to persist
+//   - forwards Authara's Set-Cookie headers to the client response (to persist
 //     rotated refresh/access cookies), and
 //   - extracts and verifies the new access token cookie value so the CURRENT
 //     request can proceed authenticated.
 //
-// It returns ok=false if refresh is disabled, the AuthGate call fails, the
+// It returns ok=false if refresh is disabled, the Authara call fails, the
 // response does not contain a usable access cookie, or access verification fails.
 func (s *SDK) tryRefreshAndVerify(w http.ResponseWriter, r *http.Request) (uuid.UUID, []string, []*http.Cookie, bool) {
 	// Refresh disabled unless configured explicitly.
-	if s.authGateBaseURL == "" {
+	if s.autharaBaseURL == "" {
 		return uuid.Nil, nil, nil, false
 	}
 
-	reqURL := s.authGateBaseURL + RefreshPath + "?audience=" + s.verifier.audience
+	reqURL := s.autharaBaseURL + RefreshPath + "?audience=" + s.verifier.audience
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, reqURL, nil)
 	if err != nil {
 		return uuid.Nil, nil, nil, false
 	}
 
-	// Forward cookies from the incoming request to AuthGate.
+	// Forward cookies from the incoming request to Authara.
 	// This is required for cookie-based refresh.
 	if cookieHeader := r.Header.Get("Cookie"); cookieHeader != "" {
 		req.Header.Set("Cookie", cookieHeader)
@@ -148,7 +148,7 @@ func (s *SDK) tryRefreshAndVerify(w http.ResponseWriter, r *http.Request) (uuid.
 		return uuid.Nil, nil, nil, false
 	}
 
-	// Forward raw Set-Cookie headers exactly as AuthGate sent them.
+	// Forward raw Set-Cookie headers exactly as Authara sent them.
 	// Note: multiple Set-Cookie headers are expected (access + refresh, etc.).
 	rawSetCookies := resp.Header.Values("Set-Cookie")
 	if len(rawSetCookies) == 0 {
@@ -177,8 +177,8 @@ func (s *SDK) tryRefreshAndVerify(w http.ResponseWriter, r *http.Request) (uuid.
 		return uuid.Nil, nil, nil, false
 	}
 
-	// Return all cookies set by AuthGate so the middleware can apply them to the
-	// cloned request (same-request correctness for downstream AuthGate calls).
+	// Return all cookies set by Authara so the middleware can apply them to the
+	// cloned request (same-request correctness for downstream Authara calls).
 	return uid, rs, resp.Cookies(), true
 }
 
@@ -187,7 +187,7 @@ func (s *SDK) tryRefreshAndVerify(w http.ResponseWriter, r *http.Request) (uuid.
 // Behavior on unauthenticated requests depends on the request type:
 //
 //   - Browser navigations (Accept: text/html):
-//     Responds with an HTTP redirect (302) to the AuthGate login page,
+//     Responds with an HTTP redirect (302) to the Authara login page,
 //     including a return_to parameter pointing to the original request URL.
 //
 //   - HTMX requests (HX-Request: true):

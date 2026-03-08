@@ -1,4 +1,4 @@
-package authgate
+package authara
 
 import (
 	"net/http"
