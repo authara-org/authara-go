@@ -244,12 +244,26 @@ authara.AttachCSRF(req, token)
 
 The SDK provides helpers for handling **Authara webhooks**.
 
+Webhook verification requires the shared secret configured in Authara:
+
+```env
+AUTHARA_WEBHOOK_SECRET=your-shared-secret
+```
+
+This secret must match the webhook secret used by Authara when signing
+outgoing webhook requests.
+
 ---
 
 ### Basic usage
 
+If you want to load the secret from the environment:
+
 ```go
-handler := authara.WebhookHandlerFromEnv()
+handler, err := authara.RequireWebhookHandlerFromEnv()
+if err != nil {
+	log.Fatal(err)
+}
 
 evt, err := handler.Handle(w, r)
 if err != nil {
@@ -257,6 +271,14 @@ if err != nil {
 }
 
 log.Println("event:", evt.Type)
+```
+
+You can also construct the handler manually:
+
+```go
+handler := &authara.WebhookHandler{
+	Secret: os.Getenv("AUTHARA_WEBHOOK_SECRET"),
+}
 ```
 
 ---
@@ -269,11 +291,19 @@ data, _ := authara.DecodeWebhookData[authara.UserCreatedData](evt)
 
 ---
 
+### Supported event payloads
+
+- `authara.UserCreatedData`
+- `authara.UserDeletedData`
+
+---
+
 ### Design notes
 
 - Signature is always verified first
 - Payload is explicit (raw JSON + decode)
 - No retries or queues in SDK
+- Webhook delivery behavior is owned by Authara, not the SDK
 
 ---
 

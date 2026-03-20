@@ -40,16 +40,38 @@ func ConfigFromEnv() (Config, error) {
 	return cfg, nil
 }
 
-// WebhookHandlerFromEnv creates a WebhookHandler using environment variables.
+// RequireWebhookHandlerFromEnv creates a WebhookHandler and fails if the
+// webhook secret is not configured.
 //
-// It expects:
+// It reads:
 //
 //	AUTHARA_WEBHOOK_SECRET
 //
-// If the secret is empty, the handler will still be created but all requests
-// will fail signature verification.
+// This helper should be used in applications that expose a webhook endpoint,
+// ensuring misconfiguration is caught at startup.
+func RequireWebhookHandlerFromEnv() (*WebhookHandler, error) {
+	secret := strings.TrimSpace(os.Getenv("AUTHARA_WEBHOOK_SECRET"))
+	if secret == "" {
+		return nil, fmt.Errorf("AUTHARA_WEBHOOK_SECRET is empty")
+	}
+
+	return &WebhookHandler{
+		Secret: secret,
+	}, nil
+}
+
+// WebhookHandlerFromEnv creates a WebhookHandler using environment variables.
 //
-// This helper is optional and provided for convenience.
+// It reads:
+//
+//	AUTHARA_WEBHOOK_SECRET
+//
+// If the secret is empty, the handler is still returned, but all incoming
+// requests will fail signature verification.
+//
+// This helper is intended for advanced or optional setups.
+//
+// For most applications, use RequireWebhookHandlerFromEnv instead.
 func WebhookHandlerFromEnv() *WebhookHandler {
 	return &WebhookHandler{
 		Secret: strings.TrimSpace(os.Getenv("AUTHARA_WEBHOOK_SECRET")),
