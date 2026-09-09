@@ -358,6 +358,8 @@ const APIAudienceAdmin = "admin"
 
 const APIAudienceApp = "app"
 
+const APIAudienceOperator = "operator"
+
 const APIAuthMethodProviderGoogle = "google"
 
 const APIAuthMethodProviderPassword = "password"
@@ -384,9 +386,13 @@ const APICurrentUserRolesItemAutharaAuditor = "authara:auditor"
 
 const APICurrentUserRolesItemAutharaMonitor = "authara:monitor"
 
+const APICurrentUserRolesItemAutharaOperator = "authara:operator"
+
 const APIFinishPasskeyAuthenticationAudienceAdmin = "admin"
 
 const APIFinishPasskeyAuthenticationAudienceApp = "app"
+
+const APIFinishPasskeyAuthenticationAudienceOperator = "operator"
 
 const APIInvitationGoogleRequestFlowLogin = "login"
 
@@ -402,9 +408,13 @@ const APILoginWithGoogleAudienceAdmin = "admin"
 
 const APILoginWithGoogleAudienceApp = "app"
 
+const APILoginWithGoogleAudienceOperator = "operator"
+
 const APILoginWithPasswordAudienceAdmin = "admin"
 
 const APILoginWithPasswordAudienceApp = "app"
+
+const APILoginWithPasswordAudienceOperator = "operator"
 
 const APIOrganizationInvitationRoleAdmin APIOrganizationInvitationRole = "admin"
 
@@ -432,6 +442,8 @@ const APIRefreshSessionAudienceAdmin = "admin"
 
 const APIRefreshSessionAudienceApp = "app"
 
+const APIRefreshSessionAudienceOperator = "operator"
+
 const APISignupDirectAudienceApp = "app"
 
 const APIStartSignupChallengeAudienceApp = "app"
@@ -440,8 +452,12 @@ const APISwitchOrganizationAudienceAdmin = "admin"
 
 const APISwitchOrganizationAudienceApp = "app"
 
+const APISwitchOrganizationAudienceOperator = "operator"
+
 const APITokenRefreshRequestAudienceAdmin = "admin"
 
 const APITokenRefreshRequestAudienceApp = "app"
+
+const APITokenRefreshRequestAudienceOperator = "operator"
 
 const APIVerifySignupChallengeAudienceApp = "app"
