@@ -3,8 +3,6 @@ package authara
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -26,25 +24,28 @@ type revocationContractSpec struct {
 
 func TestAccessTokenRevocationsMatchCoreContract(t *testing.T) {
 	contract := loadRevocationContract(t)
-	accessToken := "secret-token"
 	issuedAt := time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC)
 	claims := &accessClaims{
 		SessionID: uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 		OrgID:     uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:       "44444444-4444-4444-4444-444444444444",
 			Subject:  "22222222-2222-2222-2222-222222222222",
 			IssuedAt: jwt.NewNumericDate(issuedAt),
 		},
 	}
-	sum := sha256.Sum256([]byte(accessToken))
 	wantKeys := []string{
-		contractKey(contract.Token, "{token_sha256}", hex.EncodeToString(sum[:])),
+		contractKey(contract.Token, "{token_identifier}", claims.ID),
 		contractKey(contract.Session, "{session_id}", claims.SessionID.String()),
 		contractKey(contract.User, "{user_id}", claims.Subject),
 		contractKey(contract.Membership,
 			"{user_id}", claims.Subject, "{organization_id}", claims.OrgID.String()),
 	}
-	if got := accessTokenRevocationKeys(accessToken, claims); !reflect.DeepEqual(got, wantKeys) {
+	got, err := accessTokenRevocationKeys(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, wantKeys) {
 		t.Fatalf("SDK keys differ from Core contract:\n got: %v\nwant: %v", got, wantKeys)
 	}
 
@@ -63,7 +64,7 @@ func TestAccessTokenRevocationsMatchCoreContract(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			store := &fakeRevocationStore{values: tt.values}
-			err := (&accessTokenRevocations{store: store}).check(context.Background(), accessToken, claims)
+			err := (&accessTokenRevocations{store: store}).check(context.Background(), claims)
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("got %v, want %v", err, tt.want)
 			}
@@ -75,8 +76,28 @@ func TestAccessTokenRevocationsMatchCoreContract(t *testing.T) {
 
 	lookupErr := errors.New("redis unavailable")
 	if err := (&accessTokenRevocations{store: &fakeRevocationStore{err: lookupErr}}).
-		check(context.Background(), accessToken, claims); !errors.Is(err, lookupErr) {
+		check(context.Background(), claims); !errors.Is(err, lookupErr) {
 		t.Fatalf("revocation lookup must fail closed: %v", err)
+	}
+}
+
+func TestAccessTokenIdentifierSupportsTokensIssuedBeforeJTI(t *testing.T) {
+	claims := &accessClaims{
+		SessionID: uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+		OrgID:     uuid.MustParse("33333333-3333-3333-3333-333333333333"),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:  "22222222-2222-2222-2222-222222222222",
+			Audience: jwt.ClaimStrings{"app"},
+			IssuedAt: jwt.NewNumericDate(time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	identifier, err := accessTokenIdentifier(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(identifier, "legacy:"+claims.SessionID.String()+":") {
+		t.Fatalf("legacy token identifier = %q", identifier)
 	}
 }
 

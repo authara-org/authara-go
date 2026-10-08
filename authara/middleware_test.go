@@ -132,7 +132,10 @@ func TestRequireAuth_RejectsRevokedAccessToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("verify test token: %v", err)
 	}
-	revocationKeys := accessTokenRevocationKeys(access, claims)
+	revocationKeys, err := accessTokenRevocationKeys(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
 	sdk.revocations = &accessTokenRevocations{store: &fakeRevocationStore{
 		values: map[string][]byte{revocationKeys[0]: []byte("1")},
 	}}

@@ -14,10 +14,12 @@ type APIAPIError struct {
 }
 
 type APIAccount struct {
-	AuthMethods []APIAuthMethod     `json:"auth_methods"`
-	Passkeys    []APIAccountPasskey `json:"passkeys"`
-	Sessions    []APIAccountSession `json:"sessions"`
-	User        APIAuthUser         `json:"user"`
+	AuthMethods        []APIAuthMethod     `json:"auth_methods"`
+	Passkeys           []APIAccountPasskey `json:"passkeys"`
+	PasskeysNextCursor *string             `json:"passkeys_next_cursor,omitempty"`
+	Sessions           []APIAccountSession `json:"sessions"`
+	SessionsNextCursor *string             `json:"sessions_next_cursor,omitempty"`
+	User               APIAuthUser         `json:"user"`
 }
 
 type APIAccountPasskey struct {
@@ -25,6 +27,12 @@ type APIAccountPasskey struct {
 	ID         uuid.UUID  `json:"id"`
 	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 	Name       string     `json:"name"`
+}
+
+type APIAccountRecoveryAppleProofRequest struct {
+	Code            string  `json:"code"`
+	InvitationToken *string `json:"invitation_token,omitempty"`
+	State           string  `json:"state"`
 }
 
 type APIAccountRecoveryGoogleProofRequest struct {
@@ -51,6 +59,25 @@ type APIAccountSession struct {
 	UserAgent string    `json:"user_agent"`
 }
 
+type APIAppleAuthorizationRequest struct {
+	Code            string  `json:"code"`
+	InvitationToken *string `json:"invitation_token,omitempty"`
+	State           string  `json:"state"`
+}
+
+type APIAppleLoginOptions struct {
+	ClientID    string `json:"client_id"`
+	Nonce       string `json:"nonce"`
+	RedirectUri string `json:"redirect_uri"`
+	State       string `json:"state"`
+}
+
+type APIAppleReauthenticationRequest struct {
+	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
+	Code                      string    `json:"code"`
+	State                     string    `json:"state"`
+}
+
 type APIAuthMethod struct {
 	CreatedAt time.Time `json:"created_at"`
 	Provider  string    `json:"provider"`
@@ -63,11 +90,22 @@ type APIAuthSession struct {
 }
 
 type APIAuthUser struct {
-	CreatedAt time.Time `json:"created_at"`
-	Disabled  bool      `json:"disabled"`
-	Email     string    `json:"email"`
+	CreatedAt       time.Time  `json:"created_at"`
+	Disabled        bool       `json:"disabled"`
+	Email           string     `json:"email"`
+	EmailVerified   bool       `json:"email_verified"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
+	ID              uuid.UUID  `json:"id"`
+	Username        string     `json:"username"`
+}
+
+type APIAuthenticationChallenge struct {
+	ExpiresAt time.Time `json:"expires_at"`
 	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
+}
+
+type APIAuthenticationChallengeReference struct {
+	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
 }
 
 type APICSRFToken struct {
@@ -111,17 +149,20 @@ type APICurrentOrganizationMember struct {
 }
 
 type APICurrentOrganizationMembers struct {
-	Members []APICurrentOrganizationMember `json:"members"`
+	Members    []APICurrentOrganizationMember `json:"members"`
+	NextCursor *string                        `json:"next_cursor,omitempty"`
 }
 
 type APICurrentUser struct {
-	CreatedAt    time.Time              `json:"created_at"`
-	Disabled     bool                   `json:"disabled"`
-	Email        string                 `json:"email"`
-	ID           uuid.UUID              `json:"id"`
-	Organization APIOrganizationSummary `json:"organization"`
-	Roles        []string               `json:"roles"`
-	Username     string                 `json:"username"`
+	CreatedAt       time.Time              `json:"created_at"`
+	Disabled        bool                   `json:"disabled"`
+	Email           string                 `json:"email"`
+	EmailVerified   bool                   `json:"email_verified"`
+	EmailVerifiedAt *time.Time             `json:"email_verified_at,omitempty"`
+	ID              uuid.UUID              `json:"id"`
+	Organization    APIOrganizationSummary `json:"organization"`
+	Roles           []string               `json:"roles"`
+	Username        string                 `json:"username"`
 }
 
 type APIEmailChangeRequest struct {
@@ -129,7 +170,9 @@ type APIEmailChangeRequest struct {
 }
 
 type APIErrorResponse struct {
-	Error APIAPIError `json:"error"`
+	AuthenticationChallenge *APIAuthenticationChallenge `json:"authentication_challenge,omitempty"`
+	Error                   APIAPIError                 `json:"error"`
+	ReauthenticateURL       *string                     `json:"reauthenticate_url,omitempty"`
 }
 
 type APIGoogleLoginOptions struct {
@@ -140,6 +183,12 @@ type APIGoogleLoginOptions struct {
 type APIGoogleLoginRequest struct {
 	Credential string `json:"credential"`
 	Nonce      string `json:"nonce"`
+}
+
+type APIGoogleReauthenticationRequest struct {
+	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
+	Credential                string    `json:"credential"`
+	Nonce                     string    `json:"nonce"`
 }
 
 type APIInternalCreateInvitationRequest struct {
@@ -161,6 +210,11 @@ type APIInternalOrganizationActorRequest struct {
 type APIInternalOwnershipTransferRequest struct {
 	ActorUserID    uuid.UUID `json:"actor_user_id"`
 	NewOwnerUserID uuid.UUID `json:"new_owner_user_id"`
+}
+
+type APIInternalUpdateOrganizationMemberRequest struct {
+	ActorUserID uuid.UUID                 `json:"actor_user_id"`
+	Role        APIOrganizationMemberRole `json:"role"`
 }
 
 type APIInvitationGoogleRequest struct {
@@ -235,6 +289,7 @@ type APIOrganizationInvitationRole string
 
 type APIOrganizationInvitations struct {
 	Invitations []APIOrganizationInvitation `json:"invitations"`
+	NextCursor  *string                     `json:"next_cursor,omitempty"`
 }
 
 type APIOrganizationMember struct {
@@ -252,13 +307,17 @@ type APIOrganizationMemberEnvelope struct {
 	Member APIOrganizationMember `json:"member"`
 }
 
+type APIOrganizationMemberRole string
+
 type APIOrganizationMembers struct {
-	Members []APIOrganizationMember `json:"members"`
+	Members    []APIOrganizationMember `json:"members"`
+	NextCursor *string                 `json:"next_cursor,omitempty"`
 }
 
 type APIOrganizationRole string
 
 type APIOrganizationSummaries struct {
+	NextCursor    *string                  `json:"next_cursor,omitempty"`
 	Organizations []APIOrganizationSummary `json:"organizations"`
 }
 
@@ -283,6 +342,12 @@ type APIPasskeyOptions struct {
 	Options     map[string]any `json:"options"`
 }
 
+type APIPasskeyReauthenticationFinishRequest struct {
+	AuthenticationChallengeID uuid.UUID      `json:"authentication_challenge_id"`
+	ChallengeID               uuid.UUID      `json:"challenge_id"`
+	Credential                map[string]any `json:"credential"`
+}
+
 type APIPasskeyRegistrationFinishRequest struct {
 	ChallengeID  uuid.UUID      `json:"challenge_id"`
 	Credential   map[string]any `json:"credential"`
@@ -293,6 +358,11 @@ type APIPasskeyRegistrationFinishRequest struct {
 type APIPasswordLoginRequest struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
+}
+
+type APIPasswordReauthenticationRequest struct {
+	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
+	Password                  string    `json:"password"`
 }
 
 type APIPasswordResetChallengeVerification struct {
@@ -338,15 +408,22 @@ type APITokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type APIUpdateOrganizationMemberRequest struct {
+	Role APIOrganizationMemberRole `json:"role"`
+}
+
 type APIUpdateOrganizationRequest struct {
 	Name string `json:"name"`
 }
 
 type APIUserMemberships struct {
 	Memberships []APIMembershipWithOrganization `json:"memberships"`
+	NextCursor  *string                         `json:"next_cursor,omitempty"`
 }
 
 const APIAcceptInvitationAudienceApp = "app"
+
+const APIAccountRecoveryLinkProofMethodsItemApple = "apple"
 
 const APIAccountRecoveryLinkProofMethodsItemGoogle = "google"
 
@@ -360,9 +437,13 @@ const APIAudienceApp = "app"
 
 const APIAudienceOperator = "operator"
 
+const APIAuthMethodProviderApple = "apple"
+
 const APIAuthMethodProviderGoogle = "google"
 
 const APIAuthMethodProviderPassword = "password"
+
+const APIAuthProviderApple = "apple"
 
 const APIAuthProviderGoogle = "google"
 
@@ -376,15 +457,13 @@ const APICapabilitiesOrganizationModePersonal = "personal"
 
 const APICapabilitiesOrganizationModeSingle = "single"
 
+const APICompleteAccountRecoveryLinkWithAppleAudienceApp = "app"
+
 const APICompleteAccountRecoveryLinkWithGoogleAudienceApp = "app"
 
 const APICompleteAccountRecoveryLinkWithPasswordAudienceApp = "app"
 
 const APICurrentUserRolesItemAutharaAdmin = "authara:admin"
-
-const APICurrentUserRolesItemAutharaAuditor = "authara:auditor"
-
-const APICurrentUserRolesItemAutharaMonitor = "authara:monitor"
 
 const APICurrentUserRolesItemAutharaOperator = "authara:operator"
 
@@ -403,6 +482,12 @@ const APIInvitationGoogleResultStatusAuthenticated = "authenticated"
 const APIInvitationGoogleResultStatusProofRequired = "proof_required"
 
 const APILoginAndAcceptInvitationAudienceApp = "app"
+
+const APILoginWithAppleAudienceAdmin = "admin"
+
+const APILoginWithAppleAudienceApp = "app"
+
+const APILoginWithAppleAudienceOperator = "operator"
 
 const APILoginWithGoogleAudienceAdmin = "admin"
 
@@ -431,6 +516,10 @@ const APIOrganizationInvitationStatusRevoked = "revoked"
 const APIOrganizationKindPersonal = "personal"
 
 const APIOrganizationKindTeam = "team"
+
+const APIOrganizationMemberRoleAdmin APIOrganizationMemberRole = "admin"
+
+const APIOrganizationMemberRoleMember APIOrganizationMemberRole = "member"
 
 const APIOrganizationRoleAdmin APIOrganizationRole = "admin"
 

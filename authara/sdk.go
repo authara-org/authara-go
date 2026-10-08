@@ -79,7 +79,7 @@ func (s *SDK) verifyAccessToken(ctx context.Context, accessToken string) (access
 	if err != nil {
 		return accessIdentity{}, err
 	}
-	if err := s.revocations.check(ctx, accessToken, claims); err != nil {
+	if err := s.revocations.check(ctx, claims); err != nil {
 		return accessIdentity{}, err
 	}
 	return identity, nil
