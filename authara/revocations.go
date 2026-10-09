@@ -2,18 +2,18 @@ package authara
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var errTokenRevoked = errors.New("authara: access token is revoked")
 
 const (
-	revokedAccessTokenKeyTemplate           = "authara:access-token:revoked:token:{token_sha256}"
+	revokedAccessTokenKeyTemplate           = "authara:access-token:revoked:token:{token_identifier}"
 	revokedAccessTokenSessionKeyTemplate    = "authara:access-token:revoked:session:{session_id}"
 	revokedAccessTokenUserKeyTemplate       = "authara:access-token:revoked:user:{user_id}"
 	revokedAccessTokenMembershipKeyTemplate = "authara:access-token:revoked:membership:{user_id}:{organization_id}"
@@ -28,7 +28,7 @@ type accessTokenRevocations struct {
 	store revocationStore
 }
 
-func (r *accessTokenRevocations) check(ctx context.Context, accessToken string, claims *accessClaims) error {
+func (r *accessTokenRevocations) check(ctx context.Context, claims *accessClaims) error {
 	if r == nil || r.store == nil {
 		return nil
 	}
@@ -36,7 +36,10 @@ func (r *accessTokenRevocations) check(ctx context.Context, accessToken string, 
 		return ErrInvalidToken
 	}
 
-	keys := accessTokenRevocationKeys(accessToken, claims)
+	keys, err := accessTokenRevocationKeys(claims)
+	if err != nil {
+		return err
+	}
 	values, err := r.store.GetMany(ctx, keys...)
 	if err != nil {
 		return fmt.Errorf("authara: check access token revocation: %w", err)
@@ -64,12 +67,14 @@ func (r *accessTokenRevocations) check(ctx context.Context, accessToken string, 
 	return nil
 }
 
-func accessTokenRevocationKeys(accessToken string, claims *accessClaims) []string {
-	sum := sha256.Sum256([]byte(accessToken))
-	tokenHash := hex.EncodeToString(sum[:])
+func accessTokenRevocationKeys(claims *accessClaims) ([]string, error) {
+	tokenIdentifier, err := accessTokenIdentifier(claims)
+	if err != nil {
+		return nil, err
+	}
 	return []string{
 		expandRevocationKey(revokedAccessTokenKeyTemplate,
-			"{token_sha256}", tokenHash,
+			"{token_identifier}", tokenIdentifier,
 		),
 		expandRevocationKey(revokedAccessTokenSessionKeyTemplate,
 			"{session_id}", claims.SessionID.String(),
@@ -81,7 +86,34 @@ func accessTokenRevocationKeys(accessToken string, claims *accessClaims) []strin
 			"{user_id}", claims.Subject,
 			"{organization_id}", claims.OrgID.String(),
 		),
+	}, nil
+}
+
+func accessTokenIdentifier(claims *accessClaims) (string, error) {
+	if claims == nil {
+		return "", ErrInvalidToken
 	}
+	if claims.ID != "" {
+		id, err := uuid.Parse(claims.ID)
+		if err != nil {
+			return "", ErrInvalidToken
+		}
+		return id.String(), nil
+	}
+	if claims.SessionID == uuid.Nil || claims.OrgID == uuid.Nil || claims.Subject == "" || claims.IssuedAt == nil {
+		return "", ErrInvalidToken
+	}
+
+	// Core tokens issued before jti support use this identifier during rolling
+	// upgrades. It contains only public claims and never bearer-token material.
+	return strings.Join([]string{
+		"legacy",
+		claims.SessionID.String(),
+		claims.Subject,
+		claims.OrgID.String(),
+		strconv.FormatInt(claims.IssuedAt.Time.Unix(), 10),
+		strings.Join(claims.Audience, ","),
+	}, ":"), nil
 }
 
 func expandRevocationKey(template string, replacements ...string) string {

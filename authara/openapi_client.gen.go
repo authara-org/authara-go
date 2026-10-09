@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -32,14 +33,29 @@ func apiRequestOptions(incoming *http.Request, cookies []string, csrf bool) []re
 	return opts
 }
 
-func (c *Client) CallGetCurrentAccount(ctx context.Context, incoming *http.Request) (*APIAccount, error) {
+func (c *Client) CallGetCurrentAccount(ctx context.Context, incoming *http.Request, sessionsCursor string, sessionsLimit int, passkeysCursor string, passkeysLimit int) (*APIAccount, error) {
 	var out APIAccount
 	path := "/auth/api/v1/account"
+	query := url.Values{}
+	query.Set("sessions_cursor", sessionsCursor)
+	query.Set("sessions_limit", strconv.FormatInt(int64(sessionsLimit), 10))
+	query.Set("passkeys_cursor", passkeysCursor)
+	query.Set("passkeys_limit", strconv.FormatInt(int64(passkeysLimit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (c *Client) CallLinkCurrentUserApple(ctx context.Context, incoming *http.Request, body APIAppleAuthorizationRequest) error {
+	path := "/auth/api/v1/account/auth-methods/apple"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_apple_oauth", "authara_csrf"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) CallLinkCurrentUserGoogle(ctx context.Context, incoming *http.Request, body APIGoogleLoginRequest) error {
@@ -227,6 +243,29 @@ func (c *Client) CallLoginWithPassword(ctx context.Context, incoming *http.Reque
 	return &out, nil
 }
 
+func (c *Client) CallLoginWithApple(ctx context.Context, incoming *http.Request, audience string, body APIAppleAuthorizationRequest) (*APIAuthSession, error) {
+	var out APIAuthSession
+	path := "/auth/api/v1/oauth/apple"
+	query := url.Values{}
+	query.Set("audience", audienceOrApp(audience))
+	path += "?" + query.Encode()
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_apple_oauth", "authara_csrf"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallGetAppleLoginOptions(ctx context.Context) (*APIAppleLoginOptions, error) {
+	var out APIAppleLoginOptions
+	path := "/auth/api/v1/oauth/apple/options"
+	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallLoginWithGoogle(ctx context.Context, incoming *http.Request, audience string, body APIGoogleLoginRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/oauth/google"
@@ -250,9 +289,13 @@ func (c *Client) CallGetGoogleLoginOptions(ctx context.Context) (*APIGoogleLogin
 	return &out, nil
 }
 
-func (c *Client) CallListCurrentUserOrganizations(ctx context.Context, incoming *http.Request) (*APIOrganizationSummaries, error) {
+func (c *Client) CallListCurrentUserOrganizations(ctx context.Context, incoming *http.Request, cursor string, limit int) (*APIOrganizationSummaries, error) {
 	var out APIOrganizationSummaries
 	path := "/auth/api/v1/organizations"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
@@ -270,9 +313,13 @@ func (c *Client) CallGetCurrentOrganization(ctx context.Context, incoming *http.
 	return &out, nil
 }
 
-func (c *Client) CallListCurrentOrganizationMembers(ctx context.Context, incoming *http.Request) (*APICurrentOrganizationMembers, error) {
+func (c *Client) CallListCurrentOrganizationMembers(ctx context.Context, incoming *http.Request, cursor string, limit int) (*APICurrentOrganizationMembers, error) {
 	var out APICurrentOrganizationMembers
 	path := "/auth/api/v1/organizations/current/members"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
@@ -300,9 +347,13 @@ func (c *Client) CallUpdatePublicOrganization(ctx context.Context, incoming *htt
 	return &out, nil
 }
 
-func (c *Client) CallListPublicOrganizationInvitations(ctx context.Context, incoming *http.Request, organizationID uuid.UUID) (*APIOrganizationInvitations, error) {
+func (c *Client) CallListPublicOrganizationInvitations(ctx context.Context, incoming *http.Request, organizationID uuid.UUID, cursor string, limit int) (*APIOrganizationInvitations, error) {
 	var out APIOrganizationInvitations
 	path := "/auth/api/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
@@ -330,9 +381,13 @@ func (c *Client) CallRevokePublicOrganizationInvitation(ctx context.Context, inc
 	return &out, nil
 }
 
-func (c *Client) CallListPublicOrganizationMembers(ctx context.Context, incoming *http.Request, organizationID uuid.UUID) (*APIOrganizationMembers, error) {
+func (c *Client) CallListPublicOrganizationMembers(ctx context.Context, incoming *http.Request, organizationID uuid.UUID, cursor string, limit int) (*APIOrganizationMembers, error) {
 	var out APIOrganizationMembers
 	path := "/auth/api/v1/organizations/" + url.PathEscape(organizationID.String()) + "/members"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
@@ -344,6 +399,16 @@ func (c *Client) CallGetPublicOrganizationMember(ctx context.Context, incoming *
 	var out APIOrganizationMemberEnvelope
 	path := "/auth/api/v1/organizations/" + url.PathEscape(organizationID.String()) + "/members/" + url.PathEscape(userID.String()) + ""
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallUpdatePublicOrganizationMember(ctx context.Context, incoming *http.Request, organizationID uuid.UUID, userID uuid.UUID, body APIUpdateOrganizationMemberRequest) (*APIOrganizationMemberEnvelope, error) {
+	var out APIOrganizationMemberEnvelope
+	path := "/auth/api/v1/organizations/" + url.PathEscape(organizationID.String()) + "/members/" + url.PathEscape(userID.String()) + ""
+	_, err := c.doJSONBody(ctx, http.MethodPatch, path, body, &out, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
 	if err != nil {
 		return nil, err
 	}
@@ -434,6 +499,19 @@ func (c *Client) CallStartGoogleAccountRecoveryLink(ctx context.Context, incomin
 	return &out, nil
 }
 
+func (c *Client) CallCompleteAccountRecoveryLinkWithApple(ctx context.Context, incoming *http.Request, linkID uuid.UUID, audience string, body APIAccountRecoveryAppleProofRequest) (*APIAuthSession, error) {
+	var out APIAuthSession
+	path := "/auth/api/v1/provider-links/recovery/" + url.PathEscape(linkID.String()) + "/apple"
+	query := url.Values{}
+	query.Set("audience", audienceOrApp(audience))
+	path += "?" + query.Encode()
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_apple_oauth", "authara_csrf"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallCompleteAccountRecoveryLinkWithGoogle(ctx context.Context, incoming *http.Request, linkID uuid.UUID, audience string, body APIAccountRecoveryGoogleProofRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/provider-links/recovery/" + url.PathEscape(linkID.String()) + "/google"
@@ -458,6 +536,61 @@ func (c *Client) CallCompleteAccountRecoveryLinkWithPassword(ctx context.Context
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (c *Client) CallReauthenticateWithApple(ctx context.Context, incoming *http.Request, body APIAppleReauthenticationRequest) error {
+	path := "/auth/api/v1/reauthenticate/apple"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_apple_oauth", "authara_csrf"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CallCheckRecentAuthentication(ctx context.Context, incoming *http.Request) error {
+	path := "/auth/api/v1/reauthenticate/check"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, nil, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CallReauthenticateWithGoogle(ctx context.Context, incoming *http.Request, body APIGoogleReauthenticationRequest) error {
+	path := "/auth/api/v1/reauthenticate/google"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf", "authara_oauth_nonce"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CallFinishPasskeyReauthentication(ctx context.Context, incoming *http.Request, body APIPasskeyReauthenticationFinishRequest) error {
+	path := "/auth/api/v1/reauthenticate/passkeys/finish"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CallBeginPasskeyReauthentication(ctx context.Context, incoming *http.Request, body APIAuthenticationChallengeReference) (*APIPasskeyOptions, error) {
+	var out APIPasskeyOptions
+	path := "/auth/api/v1/reauthenticate/passkeys/options"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallReauthenticateWithPassword(ctx context.Context, incoming *http.Request, body APIPasswordReauthenticationRequest) error {
+	path := "/auth/api/v1/reauthenticate/password"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) CallLogout(ctx context.Context, incoming *http.Request) error {
@@ -549,9 +682,13 @@ func (c *Client) CallSetCurrentUserPassword(ctx context.Context, incoming *http.
 	return nil
 }
 
-func (c *Client) CallListPublicUserMemberships(ctx context.Context, incoming *http.Request, userID uuid.UUID) (*APIUserMemberships, error) {
+func (c *Client) CallListPublicUserMemberships(ctx context.Context, incoming *http.Request, userID uuid.UUID, cursor string, limit int) (*APIUserMemberships, error) {
 	var out APIUserMemberships
 	path := "/auth/api/v1/users/" + url.PathEscape(userID.String()) + "/memberships"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out, apiRequestOptions(incoming, []string{"authara_access"}, false)...)
 	if err != nil {
 		return nil, err
@@ -592,6 +729,16 @@ func (c *Client) CallResendInternalOrganizationInvitation(ctx context.Context, o
 	var out APIOrganizationInvitationEnvelope
 	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations/" + url.PathEscape(invitationID.String()) + "/resend"
 	err := c.internalJSON(ctx, http.MethodPost, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallUpdateInternalOrganizationMember(ctx context.Context, organizationID uuid.UUID, userID uuid.UUID, body APIInternalUpdateOrganizationMemberRequest) (*APIOrganizationMemberEnvelope, error) {
+	var out APIOrganizationMemberEnvelope
+	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/members/" + url.PathEscape(userID.String()) + ""
+	err := c.internalJSON(ctx, http.MethodPatch, path, body, &out)
 	if err != nil {
 		return nil, err
 	}
