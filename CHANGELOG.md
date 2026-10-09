@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/authara-org/authara-go/compare/v0.17.0...v0.18.0) (2026-10-09)
+
+
+### Features
+
+* **api:** sync authara-core v0.22.0 ([#15](https://github.com/authara-org/authara-go/issues/15)) ([41180c1](https://github.com/authara-org/authara-go/commit/41180c1607185f9089138f5f61a8b83aa4bb95af))
+
 ## [0.17.0](https://github.com/authara-org/authara-go/compare/v0.16.0...v0.17.0) (2026-09-09)
 
 
