@@ -49,6 +49,12 @@ type APIAccountRecoveryLink struct {
 	Provider     string    `json:"provider"`
 }
 
+type APIAccountRecoveryMicrosoftProofRequest struct {
+	Credential      string  `json:"credential"`
+	InvitationToken *string `json:"invitation_token,omitempty"`
+	Nonce           string  `json:"nonce"`
+}
+
 type APIAccountRecoveryPasswordProofRequest struct {
 	InvitationToken *string `json:"invitation_token,omitempty"`
 	Password        string  `json:"password"`
@@ -267,6 +273,24 @@ type APIMembershipWithOrganization struct {
 	Organization APIOrganization `json:"organization"`
 }
 
+type APIMicrosoftLoginOptions struct {
+	Authority string `json:"authority"`
+	ClientID  string `json:"client_id"`
+	Nonce     string `json:"nonce"`
+}
+
+type APIMicrosoftLoginRequest struct {
+	Credential      string  `json:"credential"`
+	InvitationToken *string `json:"invitation_token,omitempty"`
+	Nonce           string  `json:"nonce"`
+}
+
+type APIMicrosoftReauthenticationRequest struct {
+	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
+	Credential                string    `json:"credential"`
+	Nonce                     string    `json:"nonce"`
+}
+
 type APIOrganization struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	CreatedByUserID *uuid.UUID `json:"created_by_user_id,omitempty"`
@@ -437,11 +461,15 @@ const APIAccountRecoveryLinkProofMethodsItemApple = "apple"
 
 const APIAccountRecoveryLinkProofMethodsItemGoogle = "google"
 
+const APIAccountRecoveryLinkProofMethodsItemMicrosoft = "microsoft"
+
 const APIAccountRecoveryLinkProofMethodsItemPassword = "password"
 
 const APIAccountRecoveryLinkProviderApple = "apple"
 
 const APIAccountRecoveryLinkProviderGoogle = "google"
+
+const APIAccountRecoveryLinkProviderMicrosoft = "microsoft"
 
 const APIAppAudienceApp = "app"
 
@@ -455,11 +483,15 @@ const APIAuthMethodProviderApple = "apple"
 
 const APIAuthMethodProviderGoogle = "google"
 
+const APIAuthMethodProviderMicrosoft = "microsoft"
+
 const APIAuthMethodProviderPassword = "password"
 
 const APIAuthProviderApple = "apple"
 
 const APIAuthProviderGoogle = "google"
+
+const APIAuthProviderMicrosoft = "microsoft"
 
 const APIAuthProviderPassword = "password"
 
@@ -474,6 +506,8 @@ const APICapabilitiesOrganizationModeSingle = "single"
 const APICompleteAccountRecoveryLinkWithAppleAudienceApp = "app"
 
 const APICompleteAccountRecoveryLinkWithGoogleAudienceApp = "app"
+
+const APICompleteAccountRecoveryLinkWithMicrosoftAudienceApp = "app"
 
 const APICompleteAccountRecoveryLinkWithPasswordAudienceApp = "app"
 
@@ -508,6 +542,12 @@ const APILoginWithGoogleAudienceAdmin = "admin"
 const APILoginWithGoogleAudienceApp = "app"
 
 const APILoginWithGoogleAudienceOperator = "operator"
+
+const APILoginWithMicrosoftAudienceAdmin = "admin"
+
+const APILoginWithMicrosoftAudienceApp = "app"
+
+const APILoginWithMicrosoftAudienceOperator = "operator"
 
 const APILoginWithPasswordAudienceAdmin = "admin"
 
