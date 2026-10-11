@@ -36,14 +36,17 @@ type APIAccountRecoveryAppleProofRequest struct {
 }
 
 type APIAccountRecoveryGoogleProofRequest struct {
-	Credential      string  `json:"credential"`
+	Code            *string `json:"code,omitempty"`
+	Credential      *string `json:"credential,omitempty"`
 	InvitationToken *string `json:"invitation_token,omitempty"`
-	Nonce           string  `json:"nonce"`
+	Nonce           *string `json:"nonce,omitempty"`
+	RedirectUri     *string `json:"redirect_uri,omitempty"`
 }
 
 type APIAccountRecoveryLink struct {
 	LinkID       uuid.UUID `json:"link_id"`
 	ProofMethods []string  `json:"proof_methods"`
+	Provider     string    `json:"provider"`
 }
 
 type APIAccountRecoveryPasswordProofRequest struct {
@@ -173,6 +176,7 @@ type APIErrorResponse struct {
 	AuthenticationChallenge *APIAuthenticationChallenge `json:"authentication_challenge,omitempty"`
 	Error                   APIAPIError                 `json:"error"`
 	ReauthenticateURL       *string                     `json:"reauthenticate_url,omitempty"`
+	Recovery                *APIAccountRecoveryLink     `json:"recovery,omitempty"`
 }
 
 type APIGoogleLoginOptions struct {
@@ -181,14 +185,18 @@ type APIGoogleLoginOptions struct {
 }
 
 type APIGoogleLoginRequest struct {
-	Credential string `json:"credential"`
-	Nonce      string `json:"nonce"`
+	Code        *string `json:"code,omitempty"`
+	Credential  *string `json:"credential,omitempty"`
+	Nonce       *string `json:"nonce,omitempty"`
+	RedirectUri *string `json:"redirect_uri,omitempty"`
 }
 
 type APIGoogleReauthenticationRequest struct {
 	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
-	Credential                string    `json:"credential"`
-	Nonce                     string    `json:"nonce"`
+	Code                      *string   `json:"code,omitempty"`
+	Credential                *string   `json:"credential,omitempty"`
+	Nonce                     *string   `json:"nonce,omitempty"`
+	RedirectUri               *string   `json:"redirect_uri,omitempty"`
 }
 
 type APIInternalCreateInvitationRequest struct {
@@ -218,10 +226,12 @@ type APIInternalUpdateOrganizationMemberRequest struct {
 }
 
 type APIInvitationGoogleRequest struct {
-	Credential string `json:"credential"`
-	Flow       string `json:"flow"`
-	Nonce      string `json:"nonce"`
-	Token      string `json:"token"`
+	Code        *string `json:"code,omitempty"`
+	Credential  *string `json:"credential,omitempty"`
+	Flow        string  `json:"flow"`
+	Nonce       *string `json:"nonce,omitempty"`
+	RedirectUri *string `json:"redirect_uri,omitempty"`
+	Token       string  `json:"token"`
 }
 
 type APIInvitationGoogleResult struct {
@@ -428,6 +438,10 @@ const APIAccountRecoveryLinkProofMethodsItemApple = "apple"
 const APIAccountRecoveryLinkProofMethodsItemGoogle = "google"
 
 const APIAccountRecoveryLinkProofMethodsItemPassword = "password"
+
+const APIAccountRecoveryLinkProviderApple = "apple"
+
+const APIAccountRecoveryLinkProviderGoogle = "google"
 
 const APIAppAudienceApp = "app"
 
