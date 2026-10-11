@@ -67,6 +67,15 @@ func (c *Client) CallLinkCurrentUserGoogle(ctx context.Context, incoming *http.R
 	return nil
 }
 
+func (c *Client) CallLinkCurrentUserMicrosoft(ctx context.Context, incoming *http.Request, body APIMicrosoftLoginRequest) error {
+	path := "/auth/api/v1/account/auth-methods/microsoft"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf", "authara_oauth_nonce"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) CallUnlinkCurrentUserAuthMethod(ctx context.Context, incoming *http.Request, provider string) error {
 	path := "/auth/api/v1/account/auth-methods/" + url.PathEscape(provider) + ""
 	_, err := c.doJSONBody(ctx, http.MethodDelete, path, nil, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
@@ -282,6 +291,29 @@ func (c *Client) CallLoginWithGoogle(ctx context.Context, incoming *http.Request
 func (c *Client) CallGetGoogleLoginOptions(ctx context.Context) (*APIGoogleLoginOptions, error) {
 	var out APIGoogleLoginOptions
 	path := "/auth/api/v1/oauth/google/options"
+	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallLoginWithMicrosoft(ctx context.Context, incoming *http.Request, audience string, body APIMicrosoftLoginRequest) (*APIAuthSession, error) {
+	var out APIAuthSession
+	path := "/auth/api/v1/oauth/microsoft"
+	query := url.Values{}
+	query.Set("audience", audienceOrApp(audience))
+	path += "?" + query.Encode()
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf", "authara_oauth_nonce"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallGetMicrosoftLoginOptions(ctx context.Context) (*APIMicrosoftLoginOptions, error) {
+	var out APIMicrosoftLoginOptions
+	path := "/auth/api/v1/oauth/microsoft/options"
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
 	if err != nil {
 		return nil, err
@@ -525,6 +557,19 @@ func (c *Client) CallCompleteAccountRecoveryLinkWithGoogle(ctx context.Context, 
 	return &out, nil
 }
 
+func (c *Client) CallCompleteAccountRecoveryLinkWithMicrosoft(ctx context.Context, incoming *http.Request, linkID uuid.UUID, audience string, body APIAccountRecoveryMicrosoftProofRequest) (*APIAuthSession, error) {
+	var out APIAuthSession
+	path := "/auth/api/v1/provider-links/recovery/" + url.PathEscape(linkID.String()) + "/microsoft"
+	query := url.Values{}
+	query.Set("audience", audienceOrApp(audience))
+	path += "?" + query.Encode()
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf", "authara_oauth_nonce"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallCompleteAccountRecoveryLinkWithPassword(ctx context.Context, incoming *http.Request, linkID uuid.UUID, audience string, body APIAccountRecoveryPasswordProofRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/provider-links/recovery/" + url.PathEscape(linkID.String()) + "/password"
@@ -558,6 +603,15 @@ func (c *Client) CallCheckRecentAuthentication(ctx context.Context, incoming *ht
 
 func (c *Client) CallReauthenticateWithGoogle(ctx context.Context, incoming *http.Request, body APIGoogleReauthenticationRequest) error {
 	path := "/auth/api/v1/reauthenticate/google"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf", "authara_oauth_nonce"}, true)...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CallReauthenticateWithMicrosoft(ctx context.Context, incoming *http.Request, body APIMicrosoftReauthenticationRequest) error {
+	path := "/auth/api/v1/reauthenticate/microsoft"
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf", "authara_oauth_nonce"}, true)...)
 	if err != nil {
 		return err
