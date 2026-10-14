@@ -2,35 +2,7 @@ package authara
 
 import "testing"
 
-func TestParseJWTKeys_Valid(t *testing.T) {
-	raw := "k1:YWJj,k2:ZGVm" // "abc", "def"
-
-	keys, err := parseJWTKeys(raw)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(keys) != 2 {
-		t.Fatalf("expected 2 keys, got %d", len(keys))
-	}
-}
-
-func TestParseJWTKeys_InvalidFormat(t *testing.T) {
-	_, err := parseJWTKeys("invalid")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-}
-
-func TestParseJWTKeys_InvalidBase64(t *testing.T) {
-	_, err := parseJWTKeys("k1:!!!")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-}
-
 func TestConfigFromEnv_Defaults(t *testing.T) {
-	t.Setenv("AUTHARA_JWT_KEYS", "k1:YWJj")
 	t.Setenv("AUTHARA_ACCESS_TOKEN_REVOCATION_ENABLED", "")
 
 	cfg, err := ConfigFromEnv()
@@ -50,8 +22,8 @@ func TestConfigFromEnv_Defaults(t *testing.T) {
 }
 
 func TestConfigFromEnv_BaseURL(t *testing.T) {
-	t.Setenv("AUTHARA_JWT_KEYS", "k1:YWJj")
 	t.Setenv("AUTHARA_BASE_URL", "http://example")
+	t.Setenv("AUTHARA_JWKS_URL", "http://keys.example/jwks")
 	t.Setenv("AUTHARA_INTERNAL_API_TOKEN", " secret ")
 
 	cfg, err := ConfigFromEnv()
@@ -62,6 +34,9 @@ func TestConfigFromEnv_BaseURL(t *testing.T) {
 	if cfg.AutharaBaseURL != "http://example" {
 		t.Fatalf("expected base url %q, got %q", "http://example", cfg.AutharaBaseURL)
 	}
+	if cfg.JWKSURL != "http://keys.example/jwks" {
+		t.Fatalf("expected JWKS URL %q, got %q", "http://keys.example/jwks", cfg.JWKSURL)
+	}
 	if cfg.InternalAPIToken != "secret" {
 		t.Fatalf("expected internal api token %q, got %q", "secret", cfg.InternalAPIToken)
 	}
@@ -71,7 +46,6 @@ func TestConfigFromEnv_BaseURL(t *testing.T) {
 }
 
 func TestConfigFromEnv_AccessTokenRevocation(t *testing.T) {
-	t.Setenv("AUTHARA_JWT_KEYS", "k1:YWJj")
 	t.Setenv("AUTHARA_ACCESS_TOKEN_REVOCATION_ENABLED", "true")
 	t.Setenv("AUTHARA_REDIS_HOST", " redis.internal ")
 	t.Setenv("AUTHARA_REDIS_PORT", "6380")

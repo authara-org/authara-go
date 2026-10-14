@@ -1,7 +1,9 @@
 package authara
 
 import (
+	"context"
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,34 +29,36 @@ type accessIdentity struct {
 type verifier struct {
 	issuer   string
 	audience string
-	keys     map[string][]byte
+	keys     *jwksCache
 }
 
-func newVerifier(cfg Config) (*verifier, error) {
-	return &verifier{
-		issuer:   cfg.Issuer,
-		audience: cfg.Audience,
-		keys:     cfg.Keys,
-	}, nil
+func newVerifier(issuer, audience, jwksURL string, client *http.Client) (*verifier, error) {
+	keys, err := newJWKSCache(jwksURL, client)
+	if err != nil {
+		return nil, err
+	}
+	return &verifier{issuer: issuer, audience: audience, keys: keys}, nil
 }
 
-func (v *verifier) verify(tokenString string) (accessIdentity, error) {
-	identity, _, err := v.verifyWithClaims(tokenString)
+func (v *verifier) verify(ctx context.Context, tokenString string) (accessIdentity, error) {
+	identity, _, err := v.verifyWithClaims(ctx, tokenString)
 	return identity, err
 }
 
-func (v *verifier) verifyWithClaims(tokenString string) (accessIdentity, *accessClaims, error) {
+func (v *verifier) verifyWithClaims(ctx context.Context, tokenString string) (accessIdentity, *accessClaims, error) {
 	parser := jwt.NewParser(
-		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
+		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
 		jwt.WithLeeway(clockSkew),
 		jwt.WithIssuer(v.issuer),
 		jwt.WithAudience(v.audience),
+		jwt.WithExpirationRequired(),
+		jwt.WithIssuedAt(),
 	)
 
 	token, err := parser.ParseWithClaims(
 		tokenString,
 		&accessClaims{},
-		v.keyFunc,
+		func(token *jwt.Token) (any, error) { return v.keyFunc(ctx, token) },
 	)
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -72,12 +76,13 @@ func (v *verifier) verifyWithClaims(tokenString string) (accessIdentity, *access
 	if claims.Subject == "" ||
 		claims.SessionID == uuid.Nil ||
 		claims.OrgID == uuid.Nil ||
+		claims.IssuedAt == nil ||
 		orgRole == "" {
 		return accessIdentity{}, nil, ErrInvalidToken
 	}
 
 	userID, err := uuid.Parse(claims.Subject)
-	if err != nil {
+	if err != nil || userID == uuid.Nil {
 		return accessIdentity{}, nil, ErrInvalidToken
 	}
 
@@ -91,20 +96,17 @@ func (v *verifier) verifyWithClaims(tokenString string) (accessIdentity, *access
 		UserID:           userID,
 		OrganizationID:   claims.OrgID,
 		OrganizationRole: orgRole,
-		Roles:            claims.Roles,
+		Roles:            append([]string(nil), claims.Roles...),
 	}, claims, nil
 }
 
-func (v *verifier) keyFunc(t *jwt.Token) (any, error) {
-	kid, ok := t.Header["kid"].(string)
-	if !ok {
+func (v *verifier) keyFunc(ctx context.Context, token *jwt.Token) (any, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 		return nil, ErrInvalidToken
 	}
-
-	key, ok := v.keys[kid]
-	if !ok {
+	keyID, ok := token.Header["kid"].(string)
+	if !ok || strings.TrimSpace(keyID) == "" {
 		return nil, ErrInvalidToken
 	}
-
-	return key, nil
+	return v.keys.key(ctx, keyID)
 }

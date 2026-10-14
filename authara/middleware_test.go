@@ -1,6 +1,7 @@
 package authara
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,13 +13,14 @@ import (
 
 func newTestSDK(t *testing.T) *SDK {
 	t.Helper()
+	keys := newTestSigningKeys(t)
+	jwks := newTestJWKSServer(t, keys)
 
 	sdk, err := New(Config{
-		Issuer:   "https://auth.example.com",
-		Audience: "app",
-		Keys: map[string][]byte{
-			"test-kid": []byte("secret"),
-		},
+		Issuer:     "https://auth.example.com",
+		Audience:   "app",
+		JWKSURL:    jwks.URL,
+		HTTPClient: jwks.Client(),
 	})
 	if err != nil {
 		t.Fatalf("failed to create sdk: %v", err)
@@ -128,7 +130,7 @@ func TestRequireAuth_BearerTokenAuthenticates(t *testing.T) {
 func TestRequireAuth_RejectsRevokedAccessToken(t *testing.T) {
 	sdk, keys := newTestSDKWithRefresh(t, "", nil)
 	access := signAccessToken(t, keys, uuid.New(), []string{"authara:user"}, time.Hour)
-	_, claims, err := sdk.verifier.verifyWithClaims(access)
+	_, claims, err := sdk.verifier.verifyWithClaims(context.Background(), access)
 	if err != nil {
 		t.Fatalf("verify test token: %v", err)
 	}

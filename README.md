@@ -19,7 +19,7 @@ This SDK is designed to:
 - expose **facts**, not policy
 - avoid hidden behavior
 - keep authentication and authorization concerns separate
-- require explicit configuration for any network behavior
+- cache public signing keys according to Authara's JWKS response
 
 Authara itself remains the single source of truth for authentication,
 sessions, refresh logic, CSRF enforcement, and security invariants.
@@ -61,11 +61,12 @@ These helpers are **strict by design**:
 - Does **not** authenticate users
 - Does **not** manage sessions
 - Does **not** enforce authorization policy
-- Does **not** perform background or implicit network calls
+- Does **not** perform background network calls
 
 > Exceptions: `RequireAuthWithRefresh` can perform a best-effort refresh call,
-> and middleware can query Redis for access-token revocations. Both behaviors
-> must be explicitly enabled through configuration.
+> middleware can query Redis for access-token revocations, and token validation
+> fetches public signing keys from JWKS on demand. JWKS requests are cached and
+> never contain private signing material.
 
 All authentication, session management, refresh logic, and CSRF enforcement live
 exclusively in **Authara itself**, not in this SDK.
@@ -84,24 +85,26 @@ go get github.com/authara-org/authara-go
 
 ```go
 sdk, err := authara.New(authara.Config{
-	Issuer:   "https://example.com/auth",
-	Audience: "app",
-	Keys: map[string][]byte{
-		"key-id": []byte("secret"),
-	},
+	Issuer:         "authara",
+	Audience:       "app",
+	AutharaBaseURL: "https://example.com",
 })
 if err != nil {
 	// handle configuration error
 }
 ```
 
-All fields are required:
+Required values:
 
 - `Issuer` must exactly match the issuer configured in Authara
 - `Audience` must match the intended token audience
-- `Keys` maps JWT `kid` values to their signing secrets
+- either `AutharaBaseURL` or an explicit `JWKSURL`
 
-Multiple keys may be provided to support key rotation.
+The SDK fetches public Ed25519 keys from
+`/auth/.well-known/jwks.json`, honors the endpoint's ETag and cache policy, and
+refreshes once on a new `kid` during rotation. Core's private signing seeds are
+never configured in the SDK. When `HTTPClient` is omitted, JWKS and refresh
+requests use a five-second timeout; a caller-provided client is used unchanged.
 
 ---
 
@@ -125,8 +128,8 @@ Expected environment variables:
 
 - `AUTHARA_AUDIENCE` (default: `app`)
 - `AUTHARA_ISSUER` (default: `authara`)
-- `AUTHARA_JWT_KEYS` (required)
-- `AUTHARA_BASE_URL` (optional, enables refresh)
+- `AUTHARA_BASE_URL` (required unless `AUTHARA_JWKS_URL` is set; also enables refresh)
+- `AUTHARA_JWKS_URL` (optional; derived from `AUTHARA_BASE_URL` when omitted)
 - `AUTHARA_INTERNAL_API_TOKEN` (optional, enables internal API helpers)
 - `AUTHARA_ACCESS_TOKEN_REVOCATION_ENABLED` (default: `false`)
 - `AUTHARA_REDIS_HOST` (default: `localhost`, used when revocation checks are enabled)
@@ -147,12 +150,8 @@ To enable refresh, configure the Authara base URL:
 
 ```go
 sdk, err := authara.New(authara.Config{
-	Issuer:   "https://example.com/auth",
-	Audience: "app",
-	Keys: map[string][]byte{
-		"key-id": []byte("secret"),
-	},
-
+	Issuer:         "authara",
+	Audience:       "app",
 	AutharaBaseURL: "http://authara:8080",
 })
 ```

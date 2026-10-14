@@ -21,6 +21,9 @@ const (
 	// It should be cookie-based and respond with Set-Cookie headers.
 	RefreshPath = "/auth/api/v1/sessions/refresh"
 
+	// JWKSPath publishes Authara's public Ed25519 access-token keys.
+	JWKSPath = "/auth/.well-known/jwks.json"
+
 	// clockSkew defines the allowed clock skew when validating JWT timestamps.
 	//
 	// This accounts for small differences between the Authara server's clock

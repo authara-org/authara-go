@@ -12,16 +12,17 @@ import (
 	"github.com/google/uuid"
 )
 
-func newTestSDKWithRefresh(t *testing.T, autharaBaseURL string, hc *http.Client) (*SDK, map[string][]byte) {
+func newTestSDKWithRefresh(t *testing.T, autharaBaseURL string, hc *http.Client) (*SDK, testSigningKeys) {
 	t.Helper()
 
-	key := []byte("super-secret")
-	keys := map[string][]byte{"test-kid": key}
+	keys := newTestSigningKeys(t)
+	jwks := newTestJWKSServer(t, keys)
 
 	sdk, err := New(Config{
-		Issuer:   "https://auth.example.com",
-		Audience: "app",
-		Keys:     keys,
+		Issuer:     "https://auth.example.com",
+		Audience:   "app",
+		JWKSURL:    jwks.URL,
+		HTTPClient: jwks.Client(),
 	})
 	if err != nil {
 		t.Fatalf("failed to create sdk: %v", err)
@@ -37,7 +38,7 @@ func newTestSDKWithRefresh(t *testing.T, autharaBaseURL string, hc *http.Client)
 	return sdk, keys
 }
 
-func signAccessToken(t *testing.T, keys map[string][]byte, userID uuid.UUID, roles []string, expiresIn time.Duration) string {
+func signAccessToken(t *testing.T, keys testSigningKeys, userID uuid.UUID, roles []string, expiresIn time.Duration) string {
 	t.Helper()
 
 	now := time.Now()
@@ -56,7 +57,7 @@ func signAccessToken(t *testing.T, keys map[string][]byte, userID uuid.UUID, rol
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	token.Header["kid"] = "test-kid"
 
 	s, err := token.SignedString(keys["test-kid"])
@@ -137,7 +138,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_Authen
 		gotCSRFHeader = r.Header.Get(CSRFHeaderName)
 
 		// Issue new cookies (access must verify).
-		access := signAccessToken(t, map[string][]byte{"test-kid": []byte("super-secret")}, userID, []string{"authara:user"}, time.Hour)
+		access := signAccessToken(t, newTestSigningKeys(t), userID, []string{"authara:user"}, time.Hour)
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     AccessCookieName,
@@ -231,7 +232,7 @@ func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_UpdatesRequestCookieHead
 	authara := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		issuedAccess = signAccessToken(
 			t,
-			map[string][]byte{"test-kid": []byte("super-secret")},
+			newTestSigningKeys(t),
 			userID,
 			[]string{"authara:user"},
 			time.Hour,
