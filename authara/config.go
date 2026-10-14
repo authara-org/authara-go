@@ -4,13 +4,12 @@ import "net/http"
 
 // Config defines the configuration required to initialize the Authara SDK.
 //
-// All fields are required. The SDK performs strict validation when calling
-// New and will return an error if any required field is missing or invalid.
+// Issuer, Audience, and either JWKSURL or AutharaBaseURL are required. The SDK
+// performs strict validation when calling New.
 type Config struct {
 	// Issuer is the expected issuer (iss claim) of Authara-issued access tokens.
 	//
-	// This must exactly match the issuer configured in the Authara server,
-	// including scheme and host (e.g. "https://example.com").
+	// This must exactly match the issuer configured in Authara Core.
 	Issuer string
 
 	// Audience is the expected audience (aud claim) of access tokens.
@@ -19,16 +18,17 @@ type Config struct {
 	// Tokens with a different audience will be rejected.
 	Audience string
 
-	// Keys maps key IDs (kid) to their corresponding HMAC secrets.
+	// JWKSURL is the Authara endpoint that publishes public access-token keys.
 	//
-	// The key ID must match the "kid" header of the JWT. Multiple keys may be
-	// provided to support key rotation.
-	Keys map[string][]byte
+	// If empty, the SDK derives it from AutharaBaseURL by appending JWKSPath.
+	// The URL must use http or https and must not contain credentials, a query,
+	// or a fragment.
+	JWKSURL string
 
-	// AutharaBaseURL enables refresh behavior in RequireAuth.
+	// AutharaBaseURL is used to derive JWKSURL and enables refresh behavior.
 	//
-	// Example: "https://example.com", or if you use Docker, e.g.: "authara:3000"
-	// If empty, RequireAuth will NOT attempt refresh and will behave as today.
+	// Example: "https://example.com", or in Docker: "http://authara:8080".
+	// It may be empty only when JWKSURL is set; refresh is then disabled.
 	AutharaBaseURL string
 
 	// InternalAPIToken authorizes calls to /auth/internal/v1.
@@ -36,8 +36,8 @@ type Config struct {
 	// It must match AUTHARA_INTERNAL_API_TOKEN configured in Authara.
 	InternalAPIToken string
 
-	// HTTPClient is used for outbound calls to Authara (refresh).
-	// If nil, http.DefaultClient is used.
+	// HTTPClient is used for JWKS and refresh requests.
+	// If nil, the SDK uses an HTTP client with a five-second timeout.
 	HTTPClient *http.Client
 
 	// AccessTokenRevocationEnabled makes middleware reject access tokens that

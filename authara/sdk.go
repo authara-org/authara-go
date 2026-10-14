@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
+
+const defaultHTTPTimeout = 5 * time.Second
 
 // SDK is the main entry point for the Authara Go SDK.
 //
@@ -23,44 +26,50 @@ type SDK struct {
 
 // New initializes a new Authara SDK instance using the provided configuration.
 //
-// All fields of Config are required. New performs validation and returns
-// an error if the configuration is incomplete or invalid.
+// Issuer, Audience, and either JWKSURL or AutharaBaseURL are required. New
+// performs validation and returns an error for incomplete or invalid input.
 //
 // Example:
 //
 //	sdk, err := authara.New(authara.Config{
-//		Issuer:          "https://example.com",
-//		Audience:        "app",
-//		Keys:            keys,
-//		AutharaBaseURL: "authara:3000"
-//		HTTPCliet:       nil
+//		Issuer:         "https://example.com",
+//		Audience:       "app",
+//		AutharaBaseURL: "https://example.com",
+//		HTTPClient:      nil,
 //	})
 func New(cfg Config) (*SDK, error) {
-	if cfg.Issuer == "" {
+	issuer := strings.TrimSpace(cfg.Issuer)
+	if issuer == "" {
 		return nil, errors.New("authara: issuer is required")
 	}
 
-	if cfg.Audience == "" {
+	audience := strings.TrimSpace(cfg.Audience)
+	if audience == "" {
 		return nil, errors.New("authara: audience is required")
-	}
-
-	if len(cfg.Keys) == 0 {
-		return nil, errors.New("authara: at least one key is required")
-	}
-
-	v, err := newVerifier(cfg)
-	if err != nil {
-		return nil, err
 	}
 
 	hc := cfg.HTTPClient
 	if hc == nil {
-		hc = http.DefaultClient
+		hc = &http.Client{Timeout: defaultHTTPTimeout}
+	}
+
+	autharaBaseURL := strings.TrimRight(strings.TrimSpace(cfg.AutharaBaseURL), "/")
+	jwksURL := strings.TrimSpace(cfg.JWKSURL)
+	if jwksURL == "" && autharaBaseURL != "" {
+		jwksURL = autharaBaseURL + JWKSPath
+	}
+	if jwksURL == "" {
+		return nil, errors.New("authara: JWKS URL or Authara base URL is required")
+	}
+
+	v, err := newVerifier(issuer, audience, jwksURL, hc)
+	if err != nil {
+		return nil, err
 	}
 
 	sdk := &SDK{
 		verifier:         v,
-		autharaBaseURL:   strings.TrimRight(cfg.AutharaBaseURL, "/"),
+		autharaBaseURL:   autharaBaseURL,
 		internalAPIToken: strings.TrimSpace(cfg.InternalAPIToken),
 		httpClient:       hc,
 	}
@@ -75,7 +84,7 @@ func New(cfg Config) (*SDK, error) {
 }
 
 func (s *SDK) verifyAccessToken(ctx context.Context, accessToken string) (accessIdentity, error) {
-	identity, claims, err := s.verifier.verifyWithClaims(accessToken)
+	identity, claims, err := s.verifier.verifyWithClaims(ctx, accessToken)
 	if err != nil {
 		return accessIdentity{}, err
 	}
