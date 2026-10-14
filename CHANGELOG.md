@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.0](https://github.com/authara-org/authara-go/compare/v0.20.0...v0.21.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* verify access tokens with JWKS ([#21](https://github.com/authara-org/authara-go/issues/21))
+
+### Features
+
+* verify access tokens with JWKS ([#21](https://github.com/authara-org/authara-go/issues/21)) ([0476c78](https://github.com/authara-org/authara-go/commit/0476c78203b7624c2713ff3f5d2b3555c60b373a))
+
 ## [0.20.0](https://github.com/authara-org/authara-go/compare/v0.19.0...v0.20.0) (2026-10-11)
 
 
