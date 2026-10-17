@@ -168,8 +168,11 @@ func (c *Client) CallGetPublicCapabilities(ctx context.Context, incoming *http.R
 	return &out, nil
 }
 
-func (c *Client) CallResendChallenge(ctx context.Context, incoming *http.Request, body APIChallengeReference) error {
+func (c *Client) CallResendChallenge(ctx context.Context, incoming *http.Request, sessionTransport string, body APIChallengeReference) error {
 	path := "/auth/api/v1/challenges/resend"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
 		return err
@@ -239,11 +242,12 @@ func (c *Client) CallPreviewInvitation(ctx context.Context, token string) (*APII
 	return &out, nil
 }
 
-func (c *Client) CallLoginWithPassword(ctx context.Context, incoming *http.Request, audience string, body APIPasswordLoginRequest) (*APIAuthSession, error) {
+func (c *Client) CallLoginWithPassword(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APIPasswordLoginRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/login"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
@@ -252,11 +256,12 @@ func (c *Client) CallLoginWithPassword(ctx context.Context, incoming *http.Reque
 	return &out, nil
 }
 
-func (c *Client) CallLoginWithApple(ctx context.Context, incoming *http.Request, audience string, body APIAppleAuthorizationRequest) (*APIAuthSession, error) {
+func (c *Client) CallLoginWithApple(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APIAppleAuthorizationRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/oauth/apple"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_apple_oauth", "authara_csrf"}, true)...)
 	if err != nil {
@@ -265,9 +270,12 @@ func (c *Client) CallLoginWithApple(ctx context.Context, incoming *http.Request,
 	return &out, nil
 }
 
-func (c *Client) CallGetAppleLoginOptions(ctx context.Context) (*APIAppleLoginOptions, error) {
+func (c *Client) CallGetAppleLoginOptions(ctx context.Context, sessionTransport string) (*APIAppleLoginOptions, error) {
 	var out APIAppleLoginOptions
 	path := "/auth/api/v1/oauth/apple/options"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
 	if err != nil {
 		return nil, err
@@ -275,11 +283,12 @@ func (c *Client) CallGetAppleLoginOptions(ctx context.Context) (*APIAppleLoginOp
 	return &out, nil
 }
 
-func (c *Client) CallLoginWithGoogle(ctx context.Context, incoming *http.Request, audience string, body APIGoogleLoginRequest) (*APIAuthSession, error) {
+func (c *Client) CallLoginWithGoogle(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APIGoogleLoginRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/oauth/google"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf", "authara_oauth_nonce"}, true)...)
 	if err != nil {
@@ -288,9 +297,12 @@ func (c *Client) CallLoginWithGoogle(ctx context.Context, incoming *http.Request
 	return &out, nil
 }
 
-func (c *Client) CallGetGoogleLoginOptions(ctx context.Context) (*APIGoogleLoginOptions, error) {
+func (c *Client) CallGetGoogleLoginOptions(ctx context.Context, sessionTransport string) (*APIGoogleLoginOptions, error) {
 	var out APIGoogleLoginOptions
 	path := "/auth/api/v1/oauth/google/options"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
 	if err != nil {
 		return nil, err
@@ -298,11 +310,12 @@ func (c *Client) CallGetGoogleLoginOptions(ctx context.Context) (*APIGoogleLogin
 	return &out, nil
 }
 
-func (c *Client) CallLoginWithMicrosoft(ctx context.Context, incoming *http.Request, audience string, body APIMicrosoftLoginRequest) (*APIAuthSession, error) {
+func (c *Client) CallLoginWithMicrosoft(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APIMicrosoftLoginRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/oauth/microsoft"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf", "authara_oauth_nonce"}, true)...)
 	if err != nil {
@@ -311,9 +324,12 @@ func (c *Client) CallLoginWithMicrosoft(ctx context.Context, incoming *http.Requ
 	return &out, nil
 }
 
-func (c *Client) CallGetMicrosoftLoginOptions(ctx context.Context) (*APIMicrosoftLoginOptions, error) {
+func (c *Client) CallGetMicrosoftLoginOptions(ctx context.Context, sessionTransport string) (*APIMicrosoftLoginOptions, error) {
 	var out APIMicrosoftLoginOptions
 	path := "/auth/api/v1/oauth/microsoft/options"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodGet, path, nil, &out)
 	if err != nil {
 		return nil, err
@@ -460,11 +476,12 @@ func (c *Client) CallSwitchOrganization(ctx context.Context, incoming *http.Requ
 	return &out, nil
 }
 
-func (c *Client) CallFinishPasskeyAuthentication(ctx context.Context, incoming *http.Request, audience string, body APIPasskeyAuthenticationFinishRequest) (*APIAuthSession, error) {
+func (c *Client) CallFinishPasskeyAuthentication(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APIPasskeyAuthenticationFinishRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/passkeys/authenticate/finish"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
@@ -473,9 +490,12 @@ func (c *Client) CallFinishPasskeyAuthentication(ctx context.Context, incoming *
 	return &out, nil
 }
 
-func (c *Client) CallBeginPasskeyAuthentication(ctx context.Context, incoming *http.Request) (*APIPasskeyOptions, error) {
+func (c *Client) CallBeginPasskeyAuthentication(ctx context.Context, incoming *http.Request, sessionTransport string) (*APIPasskeyOptions, error) {
 	var out APIPasskeyOptions
 	path := "/auth/api/v1/passkeys/authenticate/options"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, nil, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
 		return nil, err
@@ -502,9 +522,12 @@ func (c *Client) CallBeginPasskeyRegistration(ctx context.Context, incoming *htt
 	return &out, nil
 }
 
-func (c *Client) CallStartPasswordResetChallenge(ctx context.Context, incoming *http.Request, body APIPasswordResetRequest) (*APIChallengeReference, error) {
+func (c *Client) CallStartPasswordResetChallenge(ctx context.Context, incoming *http.Request, sessionTransport string, body APIPasswordResetRequest) (*APIChallengeReference, error) {
 	var out APIChallengeReference
 	path := "/auth/api/v1/password-reset/challenges"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
 		return nil, err
@@ -512,8 +535,11 @@ func (c *Client) CallStartPasswordResetChallenge(ctx context.Context, incoming *
 	return &out, nil
 }
 
-func (c *Client) CallVerifyPasswordResetChallenge(ctx context.Context, incoming *http.Request, body APIPasswordResetChallengeVerification) error {
+func (c *Client) CallVerifyPasswordResetChallenge(ctx context.Context, incoming *http.Request, sessionTransport string, body APIPasswordResetChallengeVerification) error {
 	path := "/auth/api/v1/password-reset/challenges/verify"
+	query := url.Values{}
+	query.Set("session_transport", sessionTransport)
+	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
 		return err
@@ -668,11 +694,12 @@ func (c *Client) CallRefreshSession(ctx context.Context, incoming *http.Request,
 	return nil
 }
 
-func (c *Client) CallStartSignupChallenge(ctx context.Context, incoming *http.Request, audience string, body APISignupRequest) (*APISignupChallenge, error) {
+func (c *Client) CallStartSignupChallenge(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APISignupRequest) (*APISignupChallenge, error) {
 	var out APISignupChallenge
 	path := "/auth/api/v1/signup/challenges"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
@@ -681,11 +708,12 @@ func (c *Client) CallStartSignupChallenge(ctx context.Context, incoming *http.Re
 	return &out, nil
 }
 
-func (c *Client) CallVerifySignupChallenge(ctx context.Context, incoming *http.Request, audience string, body APISignupChallengeVerification) (*APIAuthSession, error) {
+func (c *Client) CallVerifySignupChallenge(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APISignupChallengeVerification) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/signup/challenges/verify"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
@@ -694,11 +722,12 @@ func (c *Client) CallVerifySignupChallenge(ctx context.Context, incoming *http.R
 	return &out, nil
 }
 
-func (c *Client) CallSignupDirect(ctx context.Context, incoming *http.Request, audience string, body APISignupRequest) (*APIAuthSession, error) {
+func (c *Client) CallSignupDirect(ctx context.Context, incoming *http.Request, audience string, sessionTransport string, body APISignupRequest) (*APIAuthSession, error) {
 	var out APIAuthSession
 	path := "/auth/api/v1/signup/direct"
 	query := url.Values{}
 	query.Set("audience", audienceOrApp(audience))
+	query.Set("session_transport", sessionTransport)
 	path += "?" + query.Encode()
 	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_csrf"}, true)...)
 	if err != nil {
@@ -715,6 +744,15 @@ func (c *Client) CallRefreshTokens(ctx context.Context, body APITokenRefreshRequ
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (c *Client) CallRevokeTokens(ctx context.Context, body APITokenRevocationRequest) error {
+	path := "/auth/api/v1/tokens/revoke"
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) CallGetCurrentUser(ctx context.Context, incoming *http.Request) (*APICurrentUser, error) {
