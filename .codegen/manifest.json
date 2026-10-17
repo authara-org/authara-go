@@ -1,11 +1,11 @@
 {
   "core": {
     "repository": "authara-org/authara",
-    "version": "v0.24.0",
-    "commit": "9c93a730b8c4937a55e3b8c1d8b9c976aac87bf0",
+    "version": "v0.26.0",
+    "commit": "d9f64a0d3346fc0388ece81409c6145bf2b72e8c",
     "contract": "contract/openapi.yaml",
-    "contractSha256": "af697e66c1be1f478272781707060b6796759ccce7f9e6b4d0a1c0327088005a",
+    "contractSha256": "184805cd657a12410f53ce37ebc0715d015515c10a6306d11ad6e09ad0b967fd",
     "revocationContract": "contract/access-token-revocations.json"
   },
-  "generatorCommit": "491733f6c652d25d977b0c216be46995ccfc9654"
+  "generatorCommit": "3e3ca34dbc02cf484c45ae34b7eac6cf2cf35670"
 }

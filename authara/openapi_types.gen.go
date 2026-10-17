@@ -30,17 +30,19 @@ type APIAccountPasskey struct {
 }
 
 type APIAccountRecoveryAppleProofRequest struct {
-	Code            string  `json:"code"`
-	InvitationToken *string `json:"invitation_token,omitempty"`
-	State           string  `json:"state"`
+	ChallengeID     *uuid.UUID `json:"challenge_id,omitempty"`
+	Code            string     `json:"code"`
+	InvitationToken *string    `json:"invitation_token,omitempty"`
+	State           string     `json:"state"`
 }
 
 type APIAccountRecoveryGoogleProofRequest struct {
-	Code            *string `json:"code,omitempty"`
-	Credential      *string `json:"credential,omitempty"`
-	InvitationToken *string `json:"invitation_token,omitempty"`
-	Nonce           *string `json:"nonce,omitempty"`
-	RedirectUri     *string `json:"redirect_uri,omitempty"`
+	ChallengeID     *uuid.UUID `json:"challenge_id,omitempty"`
+	Code            *string    `json:"code,omitempty"`
+	Credential      *string    `json:"credential,omitempty"`
+	InvitationToken *string    `json:"invitation_token,omitempty"`
+	Nonce           *string    `json:"nonce,omitempty"`
+	RedirectUri     *string    `json:"redirect_uri,omitempty"`
 }
 
 type APIAccountRecoveryLink struct {
@@ -50,9 +52,10 @@ type APIAccountRecoveryLink struct {
 }
 
 type APIAccountRecoveryMicrosoftProofRequest struct {
-	Credential      string  `json:"credential"`
-	InvitationToken *string `json:"invitation_token,omitempty"`
-	Nonce           string  `json:"nonce"`
+	ChallengeID     *uuid.UUID `json:"challenge_id,omitempty"`
+	Credential      string     `json:"credential"`
+	InvitationToken *string    `json:"invitation_token,omitempty"`
+	Nonce           string     `json:"nonce"`
 }
 
 type APIAccountRecoveryPasswordProofRequest struct {
@@ -69,22 +72,25 @@ type APIAccountSession struct {
 }
 
 type APIAppleAuthorizationRequest struct {
-	Code            string  `json:"code"`
-	InvitationToken *string `json:"invitation_token,omitempty"`
-	State           string  `json:"state"`
+	ChallengeID     *uuid.UUID `json:"challenge_id,omitempty"`
+	Code            string     `json:"code"`
+	InvitationToken *string    `json:"invitation_token,omitempty"`
+	State           string     `json:"state"`
 }
 
 type APIAppleLoginOptions struct {
-	ClientID    string `json:"client_id"`
-	Nonce       string `json:"nonce"`
-	RedirectUri string `json:"redirect_uri"`
-	State       string `json:"state"`
+	ChallengeID *uuid.UUID `json:"challenge_id,omitempty"`
+	ClientID    string     `json:"client_id"`
+	Nonce       string     `json:"nonce"`
+	RedirectUri string     `json:"redirect_uri"`
+	State       string     `json:"state"`
 }
 
 type APIAppleReauthenticationRequest struct {
-	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
-	Code                      string    `json:"code"`
-	State                     string    `json:"state"`
+	AuthenticationChallengeID uuid.UUID  `json:"authentication_challenge_id"`
+	ChallengeID               *uuid.UUID `json:"challenge_id,omitempty"`
+	Code                      string     `json:"code"`
+	State                     string     `json:"state"`
 }
 
 type APIAuthMethod struct {
@@ -186,23 +192,26 @@ type APIErrorResponse struct {
 }
 
 type APIGoogleLoginOptions struct {
-	ClientID string `json:"client_id"`
-	Nonce    string `json:"nonce"`
+	ChallengeID *uuid.UUID `json:"challenge_id,omitempty"`
+	ClientID    string     `json:"client_id"`
+	Nonce       string     `json:"nonce"`
 }
 
 type APIGoogleLoginRequest struct {
-	Code        *string `json:"code,omitempty"`
-	Credential  *string `json:"credential,omitempty"`
-	Nonce       *string `json:"nonce,omitempty"`
-	RedirectUri *string `json:"redirect_uri,omitempty"`
+	ChallengeID *uuid.UUID `json:"challenge_id,omitempty"`
+	Code        *string    `json:"code,omitempty"`
+	Credential  *string    `json:"credential,omitempty"`
+	Nonce       *string    `json:"nonce,omitempty"`
+	RedirectUri *string    `json:"redirect_uri,omitempty"`
 }
 
 type APIGoogleReauthenticationRequest struct {
-	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
-	Code                      *string   `json:"code,omitempty"`
-	Credential                *string   `json:"credential,omitempty"`
-	Nonce                     *string   `json:"nonce,omitempty"`
-	RedirectUri               *string   `json:"redirect_uri,omitempty"`
+	AuthenticationChallengeID uuid.UUID  `json:"authentication_challenge_id"`
+	ChallengeID               *uuid.UUID `json:"challenge_id,omitempty"`
+	Code                      *string    `json:"code,omitempty"`
+	Credential                *string    `json:"credential,omitempty"`
+	Nonce                     *string    `json:"nonce,omitempty"`
+	RedirectUri               *string    `json:"redirect_uri,omitempty"`
 }
 
 type APIInternalCreateInvitationRequest struct {
@@ -274,21 +283,24 @@ type APIMembershipWithOrganization struct {
 }
 
 type APIMicrosoftLoginOptions struct {
-	Authority string `json:"authority"`
-	ClientID  string `json:"client_id"`
-	Nonce     string `json:"nonce"`
+	Authority   string     `json:"authority"`
+	ChallengeID *uuid.UUID `json:"challenge_id,omitempty"`
+	ClientID    string     `json:"client_id"`
+	Nonce       string     `json:"nonce"`
 }
 
 type APIMicrosoftLoginRequest struct {
-	Credential      string  `json:"credential"`
-	InvitationToken *string `json:"invitation_token,omitempty"`
-	Nonce           string  `json:"nonce"`
+	ChallengeID     *uuid.UUID `json:"challenge_id,omitempty"`
+	Credential      string     `json:"credential"`
+	InvitationToken *string    `json:"invitation_token,omitempty"`
+	Nonce           string     `json:"nonce"`
 }
 
 type APIMicrosoftReauthenticationRequest struct {
-	AuthenticationChallengeID uuid.UUID `json:"authentication_challenge_id"`
-	Credential                string    `json:"credential"`
-	Nonce                     string    `json:"nonce"`
+	AuthenticationChallengeID uuid.UUID  `json:"authentication_challenge_id"`
+	ChallengeID               *uuid.UUID `json:"challenge_id,omitempty"`
+	Credential                string     `json:"credential"`
+	Nonce                     string     `json:"nonce"`
 }
 
 type APIOrganization struct {
@@ -437,6 +449,10 @@ type APITokenRefreshRequest struct {
 	RefreshToken string  `json:"refresh_token"`
 }
 
+type APITokenRevocationRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 type APITokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -497,6 +513,10 @@ const APIAuthProviderPassword = "password"
 
 const APIAuthenticateAndAcceptInvitationWithGoogleAudienceApp = "app"
 
+const APIBeginPasskeyAuthenticationSessionTransportCookie = "cookie"
+
+const APIBeginPasskeyAuthenticationSessionTransportToken = "token"
+
 const APICapabilitiesOrganizationModeMulti = "multi"
 
 const APICapabilitiesOrganizationModePersonal = "personal"
@@ -521,6 +541,22 @@ const APIFinishPasskeyAuthenticationAudienceApp = "app"
 
 const APIFinishPasskeyAuthenticationAudienceOperator = "operator"
 
+const APIFinishPasskeyAuthenticationSessionTransportCookie = "cookie"
+
+const APIFinishPasskeyAuthenticationSessionTransportToken = "token"
+
+const APIGetAppleLoginOptionsSessionTransportCookie = "cookie"
+
+const APIGetAppleLoginOptionsSessionTransportToken = "token"
+
+const APIGetGoogleLoginOptionsSessionTransportCookie = "cookie"
+
+const APIGetGoogleLoginOptionsSessionTransportToken = "token"
+
+const APIGetMicrosoftLoginOptionsSessionTransportCookie = "cookie"
+
+const APIGetMicrosoftLoginOptionsSessionTransportToken = "token"
+
 const APIInvitationGoogleRequestFlowLogin = "login"
 
 const APIInvitationGoogleRequestFlowSignup = "signup"
@@ -537,11 +573,19 @@ const APILoginWithAppleAudienceApp = "app"
 
 const APILoginWithAppleAudienceOperator = "operator"
 
+const APILoginWithAppleSessionTransportCookie = "cookie"
+
+const APILoginWithAppleSessionTransportToken = "token"
+
 const APILoginWithGoogleAudienceAdmin = "admin"
 
 const APILoginWithGoogleAudienceApp = "app"
 
 const APILoginWithGoogleAudienceOperator = "operator"
+
+const APILoginWithGoogleSessionTransportCookie = "cookie"
+
+const APILoginWithGoogleSessionTransportToken = "token"
 
 const APILoginWithMicrosoftAudienceAdmin = "admin"
 
@@ -549,11 +593,19 @@ const APILoginWithMicrosoftAudienceApp = "app"
 
 const APILoginWithMicrosoftAudienceOperator = "operator"
 
+const APILoginWithMicrosoftSessionTransportCookie = "cookie"
+
+const APILoginWithMicrosoftSessionTransportToken = "token"
+
 const APILoginWithPasswordAudienceAdmin = "admin"
 
 const APILoginWithPasswordAudienceApp = "app"
 
 const APILoginWithPasswordAudienceOperator = "operator"
+
+const APILoginWithPasswordSessionTransportCookie = "cookie"
+
+const APILoginWithPasswordSessionTransportToken = "token"
 
 const APIOrganizationInvitationRoleAdmin APIOrganizationInvitationRole = "admin"
 
@@ -587,9 +639,29 @@ const APIRefreshSessionAudienceApp = "app"
 
 const APIRefreshSessionAudienceOperator = "operator"
 
+const APIResendChallengeSessionTransportCookie = "cookie"
+
+const APIResendChallengeSessionTransportToken = "token"
+
+const APISessionTransportCookie = "cookie"
+
+const APISessionTransportToken = "token"
+
 const APISignupDirectAudienceApp = "app"
 
+const APISignupDirectSessionTransportCookie = "cookie"
+
+const APISignupDirectSessionTransportToken = "token"
+
+const APIStartPasswordResetChallengeSessionTransportCookie = "cookie"
+
+const APIStartPasswordResetChallengeSessionTransportToken = "token"
+
 const APIStartSignupChallengeAudienceApp = "app"
+
+const APIStartSignupChallengeSessionTransportCookie = "cookie"
+
+const APIStartSignupChallengeSessionTransportToken = "token"
 
 const APISwitchOrganizationAudienceAdmin = "admin"
 
@@ -603,4 +675,12 @@ const APITokenRefreshRequestAudienceApp = "app"
 
 const APITokenRefreshRequestAudienceOperator = "operator"
 
+const APIVerifyPasswordResetChallengeSessionTransportCookie = "cookie"
+
+const APIVerifyPasswordResetChallengeSessionTransportToken = "token"
+
 const APIVerifySignupChallengeAudienceApp = "app"
+
+const APIVerifySignupChallengeSessionTransportCookie = "cookie"
+
+const APIVerifySignupChallengeSessionTransportToken = "token"
