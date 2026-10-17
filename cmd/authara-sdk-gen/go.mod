@@ -2,7 +2,7 @@ module github.com/authara-org/authara-go/cmd/authara-sdk-gen
 
 go 1.25
 
-require github.com/getkin/kin-openapi v0.142.0
+require github.com/getkin/kin-openapi v0.144.0
 
 require (
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
