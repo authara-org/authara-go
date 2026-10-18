@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1](https://github.com/authara-org/authara-go/compare/v0.22.0...v0.22.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* make authorization header authoritative ([#27](https://github.com/authara-org/authara-go/issues/27)) ([25fea9b](https://github.com/authara-org/authara-go/commit/25fea9b925fe2bd803902f4d553b29c75e772a2b))
+
 ## [0.22.0](https://github.com/authara-org/authara-go/compare/v0.21.0...v0.22.0) (2026-10-17)
 
 
