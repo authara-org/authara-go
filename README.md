@@ -204,6 +204,11 @@ r.Use(sdk.RequireAuth)
 - HTMX → `HX-Redirect`
 - API → `401`
 
+When an `Authorization` header is present it is authoritative. Only one valid
+`Bearer <token>` value is accepted; malformed, unsupported, empty, or repeated
+values fail authentication and never fall back to the access cookie. The same
+precedence applies to refresh and optional-auth middleware.
+
 ---
 
 ### Require authentication with refresh

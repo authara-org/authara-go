@@ -127,6 +127,41 @@ func TestRequireAuth_BearerTokenAuthenticates(t *testing.T) {
 	}
 }
 
+func TestRequireAuth_AuthorizationHeaderNeverFallsBackToCookie(t *testing.T) {
+	sdk, keys := newTestSDKWithRefresh(t, "", nil)
+	access := signAccessToken(t, keys, uuid.New(), []string{"authara:user"}, time.Hour)
+
+	for _, test := range []struct {
+		name   string
+		values []string
+	}{
+		{name: "unsupported scheme", values: []string{"Basic credentials"}},
+		{name: "missing token", values: []string{"Bearer"}},
+		{name: "empty value", values: []string{""}},
+		{name: "repeated header", values: []string{"Bearer " + access, "Bearer " + access}},
+		{name: "invalid bearer", values: []string{"Bearer not-a-token"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			handler := sdk.RequireAuth(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+				t.Fatal("handler should not be called")
+			}))
+			request := httptest.NewRequest(http.MethodGet, "/api/private", nil)
+			request.Header.Set("Accept", "application/json")
+			request.AddCookie(&http.Cookie{Name: AccessCookieName, Value: access})
+			for _, value := range test.values {
+				request.Header.Add("Authorization", value)
+			}
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, request)
+
+			if response.Code != http.StatusUnauthorized {
+				t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+			}
+		})
+	}
+}
+
 func TestRequireAuth_RejectsRevokedAccessToken(t *testing.T) {
 	sdk, keys := newTestSDKWithRefresh(t, "", nil)
 	access := signAccessToken(t, keys, uuid.New(), []string{"authara:user"}, time.Hour)
@@ -180,5 +215,25 @@ func TestTryAuth_NoCookie_AllowsThrough(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+}
+
+func TestTryAuth_MalformedAuthorizationDoesNotUseCookie(t *testing.T) {
+	sdk, keys := newTestSDKWithRefresh(t, "", nil)
+	access := signAccessToken(t, keys, uuid.New(), []string{"authara:user"}, time.Hour)
+	handler := sdk.TryAuth(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		if _, ok := UserIDFromContext(request.Context()); ok {
+			t.Fatal("malformed Authorization unexpectedly attached cookie identity")
+		}
+	}))
+	request := httptest.NewRequest(http.MethodGet, "/optional", nil)
+	request.Header.Set("Authorization", "Basic credentials")
+	request.AddCookie(&http.Cookie{Name: AccessCookieName, Value: access})
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
 }
