@@ -33,10 +33,22 @@ import (
 // incoming request so the middleware can forward it.
 func (s *SDK) RequireAuthWithRefresh(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Fast path: access token present & valid
-		if accessToken, ok := accessTokenFromRequest(r); ok {
+		accessToken, source := accessTokenFromRequest(r)
+		if source == accessTokenFromInvalidAuthorization {
+			unauthenticated(w, r)
+			return
+		}
+
+		// Fast path: access token present & valid.
+		if source != accessTokenFromMissing {
 			if identity, err := s.verifyAccessToken(r.Context(), accessToken); err == nil {
 				next.ServeHTTP(w, r.WithContext(withAccessIdentity(r.Context(), identity)))
+				return
+			}
+			// Authorization is authoritative when present. A rejected bearer must
+			// not become a cookie refresh attempt.
+			if source == accessTokenFromBearer {
+				unauthenticated(w, r)
 				return
 			}
 		}
@@ -55,8 +67,7 @@ func (s *SDK) RequireAuthWithRefresh(next http.Handler) http.Handler {
 		}
 
 		// Refresh failed or disabled
-		loginURL := LoginPath + "?return_to=" + url.QueryEscape(buildReturnTo(r))
-		unauthenticatedResponse(w, r, loginURL)
+		unauthenticated(w, r)
 	})
 }
 
@@ -196,22 +207,25 @@ func (s *SDK) tryRefreshAndVerify(w http.ResponseWriter, r *http.Request) (acces
 // into the request context before calling the next handler.
 func (s *SDK) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		accessToken, ok := accessTokenFromRequest(r)
-		if !ok {
-			loginURL := LoginPath + "?return_to=" + url.QueryEscape(buildReturnTo(r))
-			unauthenticatedResponse(w, r, loginURL)
+		accessToken, source := accessTokenFromRequest(r)
+		if source == accessTokenFromMissing || source == accessTokenFromInvalidAuthorization {
+			unauthenticated(w, r)
 			return
 		}
 
 		identity, err := s.verifyAccessToken(r.Context(), accessToken)
 		if err != nil {
-			loginURL := LoginPath + "?return_to=" + url.QueryEscape(buildReturnTo(r))
-			unauthenticatedResponse(w, r, loginURL)
+			unauthenticated(w, r)
 			return
 		}
 
 		next.ServeHTTP(w, r.WithContext(withAccessIdentity(r.Context(), identity)))
 	})
+}
+
+func unauthenticated(w http.ResponseWriter, r *http.Request) {
+	loginURL := LoginPath + "?return_to=" + url.QueryEscape(buildReturnTo(r))
+	unauthenticatedResponse(w, r, loginURL)
 }
 
 // buildReturnTo constructs the return_to value for redirects by
@@ -259,26 +273,39 @@ func isAPICall(r *http.Request) bool {
 	return true
 }
 
-func accessTokenFromRequest(r *http.Request) (string, bool) {
-	if token, ok := bearerToken(r); ok {
-		return token, true
+type accessTokenSource uint8
+
+const (
+	accessTokenFromMissing accessTokenSource = iota
+	accessTokenFromCookie
+	accessTokenFromBearer
+	accessTokenFromInvalidAuthorization
+)
+
+func accessTokenFromRequest(r *http.Request) (string, accessTokenSource) {
+	if values, present := r.Header["Authorization"]; present {
+		if len(values) != 1 {
+			return "", accessTokenFromInvalidAuthorization
+		}
+		if token, ok := bearerToken(values[0]); ok {
+			return token, accessTokenFromBearer
+		}
+		return "", accessTokenFromInvalidAuthorization
 	}
 
 	cookie, err := r.Cookie(AccessCookieName)
 	if err != nil || cookie.Value == "" {
-		return "", false
+		return "", accessTokenFromMissing
 	}
-	return cookie.Value, true
+	return cookie.Value, accessTokenFromCookie
 }
 
-func bearerToken(r *http.Request) (string, bool) {
-	scheme, token, ok := strings.Cut(strings.TrimSpace(r.Header.Get("Authorization")), " ")
-	if !ok || !strings.EqualFold(scheme, "Bearer") {
+func bearerToken(value string) (string, bool) {
+	fields := strings.Fields(value)
+	if len(fields) != 2 || !strings.EqualFold(fields[0], "Bearer") {
 		return "", false
 	}
-
-	token = strings.TrimSpace(token)
-	return token, token != ""
+	return fields[1], true
 }
 
 // TryAuth returns middleware that attempts authentication if an access
@@ -292,7 +319,7 @@ func bearerToken(r *http.Request) (string, bool) {
 // authentication is optional.
 func (s *SDK) TryAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if accessToken, ok := accessTokenFromRequest(r); ok {
+		if accessToken, source := accessTokenFromRequest(r); source == accessTokenFromCookie || source == accessTokenFromBearer {
 			identity, err := s.verifyAccessToken(r.Context(), accessToken)
 			if err == nil {
 				r = r.WithContext(withAccessIdentity(r.Context(), identity))

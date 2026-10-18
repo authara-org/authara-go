@@ -116,6 +116,36 @@ func TestRequireAuthWithRefresh_ValidAccessCookie_SkipsRefresh(t *testing.T) {
 	}
 }
 
+func TestRequireAuthWithRefresh_AuthorizationFailureDoesNotRefreshCookies(t *testing.T) {
+	refreshHits := 0
+	authara := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		refreshHits++
+	}))
+	t.Cleanup(authara.Close)
+
+	sdk, keys := newTestSDKWithRefresh(t, authara.URL, authara.Client())
+	validCookie := signAccessToken(t, keys, uuid.New(), []string{"authara:user"}, time.Hour)
+	for _, authorization := range []string{"Basic credentials", "Bearer", "Bearer not-a-token"} {
+		request := httptest.NewRequest(http.MethodGet, "/api/private", nil)
+		request.Header.Set("Accept", "application/json")
+		request.Header.Set("Authorization", authorization)
+		request.AddCookie(&http.Cookie{Name: AccessCookieName, Value: validCookie})
+		request.AddCookie(&http.Cookie{Name: "authara_refresh", Value: "valid-refresh"})
+		response := httptest.NewRecorder()
+
+		sdk.RequireAuthWithRefresh(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			t.Fatal("handler should not be called")
+		})).ServeHTTP(response, request)
+
+		if response.Code != http.StatusUnauthorized {
+			t.Fatalf("Authorization %q status = %d, want %d", authorization, response.Code, http.StatusUnauthorized)
+		}
+	}
+	if refreshHits != 0 {
+		t.Fatalf("refresh endpoint calls = %d, want 0", refreshHits)
+	}
+}
+
 func TestRequireAuthWithRefresh_MissingAccess_RefreshOK_ForwardsSetCookie_AuthenticatesRequest(t *testing.T) {
 	userID := uuid.New()
 
