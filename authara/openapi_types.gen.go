@@ -215,10 +215,11 @@ type APIGoogleReauthenticationRequest struct {
 }
 
 type APIInternalCreateInvitationRequest struct {
-	ActorUserID uuid.UUID                      `json:"actor_user_id"`
-	Email       string                         `json:"email"`
-	Metadata    *map[string]any                `json:"metadata,omitempty"`
-	Role        *APIOrganizationInvitationRole `json:"role,omitempty"`
+	ActorUserID     uuid.UUID                      `json:"actor_user_id"`
+	DeliveryProfile *string                        `json:"delivery_profile,omitempty"`
+	Email           string                         `json:"email"`
+	Metadata        *map[string]any                `json:"metadata,omitempty"`
+	Role            *APIOrganizationInvitationRole `json:"role,omitempty"`
 }
 
 type APIInternalCreateOrganizationRequest struct {
@@ -317,14 +318,15 @@ type APIOrganizationEnvelope struct {
 }
 
 type APIOrganizationInvitation struct {
-	Email          string              `json:"email"`
-	ExpiresAt      time.Time           `json:"expires_at"`
-	ID             uuid.UUID           `json:"id"`
-	InviteURL      *string             `json:"invite_url,omitempty"`
-	Metadata       map[string]any      `json:"metadata"`
-	OrganizationID uuid.UUID           `json:"organization_id"`
-	Role           APIOrganizationRole `json:"role"`
-	Status         string              `json:"status"`
+	DeliveryProfile *string             `json:"delivery_profile,omitempty"`
+	Email           string              `json:"email"`
+	ExpiresAt       time.Time           `json:"expires_at"`
+	ID              uuid.UUID           `json:"id"`
+	InviteURL       *string             `json:"invite_url,omitempty"`
+	Metadata        map[string]any      `json:"metadata"`
+	OrganizationID  uuid.UUID           `json:"organization_id"`
+	Role            APIOrganizationRole `json:"role"`
+	Status          string              `json:"status"`
 }
 
 type APIOrganizationInvitationEnvelope struct {
