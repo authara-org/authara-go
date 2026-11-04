@@ -74,6 +74,36 @@ func TestDecodeWebhookData(t *testing.T) {
 	}
 }
 
+func TestDecodeRegistrationCompletedWebhookData(t *testing.T) {
+	body := []byte(`{
+		"id":"evt_registration",
+		"type":"registration.completed",
+		"created_at":"2026-11-04T20:00:00Z",
+		"data":{
+			"user_id":"11111111-1111-1111-1111-111111111111",
+			"organization_id":"22222222-2222-2222-2222-222222222222",
+			"organization_name":"Example",
+			"membership_role":"owner",
+			"membership_metadata":{}
+		}
+	}`)
+
+	evt, err := ParseWebhookEvent(body)
+	if err != nil {
+		t.Fatalf("ParseWebhookEvent failed: %v", err)
+	}
+	if evt.Type != WebhookEventRegistrationCompleted {
+		t.Fatalf("event type = %q, want %q", evt.Type, WebhookEventRegistrationCompleted)
+	}
+	data, err := DecodeWebhookData[RegistrationCompletedData](evt)
+	if err != nil {
+		t.Fatalf("DecodeWebhookData failed: %v", err)
+	}
+	if data.UserID == "" || data.OrganizationID == "" || data.OrganizationName != "Example" || data.MembershipRole != "owner" || len(data.MembershipMetadata) == 0 {
+		t.Fatalf("unexpected registration payload: %+v", data)
+	}
+}
+
 func TestDecodeOrganizationMembershipCreatedWebhookData(t *testing.T) {
 	body := []byte(`{
 		"id":"evt_membership",
