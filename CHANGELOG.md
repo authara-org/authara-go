@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/authara-org/authara-go/compare/v0.23.0...v0.24.0) (2026-11-04)
+
+
+### Features
+
+* **webhooks:** add registration completion payload ([#32](https://github.com/authara-org/authara-go/issues/32)) ([4325f22](https://github.com/authara-org/authara-go/commit/4325f227441cc75b4b22a6591bcfac388b53aef8))
+
 ## [0.23.0](https://github.com/authara-org/authara-go/compare/v0.22.1...v0.23.0) (2026-10-30)
 
 
