@@ -72,6 +72,10 @@ const (
 	// This prefix must be validated before verifying the signature.
 	WebhookSignaturePrefix = "sha256="
 
+	// WebhookEventRegistrationCompleted is emitted after a direct registration
+	// creates its initial user, organization, and membership atomically.
+	WebhookEventRegistrationCompleted = "registration.completed"
+
 	// WebhookEventUserCreated is emitted when a new user account is created.
 	//
 	// The payload contains a UserCreatedData object.

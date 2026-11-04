@@ -31,6 +31,16 @@ type WebhookEvent struct {
 	Data json.RawMessage `json:"data"`
 }
 
+// RegistrationCompletedData is the complete initial identity snapshot for a
+// "registration.completed" event.
+type RegistrationCompletedData struct {
+	UserID             string          `json:"user_id"`
+	OrganizationID     string          `json:"organization_id"`
+	OrganizationName   string          `json:"organization_name"`
+	MembershipRole     string          `json:"membership_role"`
+	MembershipMetadata json.RawMessage `json:"membership_metadata"`
+}
+
 // UserCreatedData is the payload for the "user.created" event.
 //
 // It contains information about the newly created user.
