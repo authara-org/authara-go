@@ -855,6 +855,16 @@ func (c *Client) CallTransferInternalOrganizationOwnership(ctx context.Context, 
 	return nil
 }
 
+func (c *Client) CallGetInternalUser(ctx context.Context, userID uuid.UUID) (*APIAuthUser, error) {
+	var out APIAuthUser
+	path := "/auth/internal/v1/users/" + url.PathEscape(userID.String()) + ""
+	err := c.internalJSON(ctx, http.MethodGet, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallDeleteInternalUser(ctx context.Context, userID uuid.UUID) error {
 	path := "/auth/internal/v1/users/" + url.PathEscape(userID.String()) + ""
 	err := c.internalJSON(ctx, http.MethodDelete, path, nil, nil)
