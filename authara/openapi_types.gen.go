@@ -99,9 +99,10 @@ type APIAuthMethod struct {
 }
 
 type APIAuthSession struct {
-	AccessToken  string      `json:"access_token"`
-	RefreshToken string      `json:"refresh_token"`
-	User         APIAuthUser `json:"user"`
+	AccessToken       string                      `json:"access_token"`
+	OrganizationState APIOrganizationSessionState `json:"organization_state"`
+	RefreshToken      string                      `json:"refresh_token"`
+	User              APIAuthUser                 `json:"user"`
 }
 
 type APIAuthUser struct {
@@ -153,6 +154,10 @@ type APIChangePasswordRequest struct {
 
 type APIChangeUsernameRequest struct {
 	Username string `json:"username"`
+}
+
+type APICreateOrganizationRequest struct {
+	Name string `json:"name"`
 }
 
 type APICurrentOrganizationMember struct {
@@ -364,6 +369,12 @@ type APIOrganizationMembers struct {
 
 type APIOrganizationRole string
 
+type APIOrganizationSessionState struct {
+	CanAcceptInvitation   bool   `json:"can_accept_invitation"`
+	CanCreateOrganization bool   `json:"can_create_organization"`
+	Status                string `json:"status"`
+}
+
 type APIOrganizationSummaries struct {
 	NextCursor    *string                  `json:"next_cursor,omitempty"`
 	Organizations []APIOrganizationSummary `json:"organizations"`
@@ -533,6 +544,8 @@ const APICompleteAccountRecoveryLinkWithMicrosoftAudienceApp = "app"
 
 const APICompleteAccountRecoveryLinkWithPasswordAudienceApp = "app"
 
+const APICreateOrganizationForCurrentUserAudienceApp = "app"
+
 const APICurrentUserRolesItemAutharaAdmin = "authara:admin"
 
 const APICurrentUserRolesItemAutharaOperator = "authara:operator"
@@ -634,6 +647,10 @@ const APIOrganizationRoleAdmin APIOrganizationRole = "admin"
 const APIOrganizationRoleMember APIOrganizationRole = "member"
 
 const APIOrganizationRoleOwner APIOrganizationRole = "owner"
+
+const APIOrganizationSessionStateStatusActive = "active"
+
+const APIOrganizationSessionStateStatusOrganizationRequired = "organization_required"
 
 const APIRefreshSessionAudienceAdmin = "admin"
 
