@@ -351,6 +351,19 @@ func (c *Client) CallListCurrentUserOrganizations(ctx context.Context, incoming 
 	return &out, nil
 }
 
+func (c *Client) CallCreateOrganizationForCurrentUser(ctx context.Context, incoming *http.Request, audience string, body APICreateOrganizationRequest) (*APIAuthSession, error) {
+	var out APIAuthSession
+	path := "/auth/api/v1/organizations"
+	query := url.Values{}
+	query.Set("audience", audienceOrApp(audience))
+	path += "?" + query.Encode()
+	_, err := c.doJSONBody(ctx, http.MethodPost, path, body, &out, apiRequestOptions(incoming, []string{"authara_access", "authara_csrf"}, true)...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallGetCurrentOrganization(ctx context.Context, incoming *http.Request) (*APIOrganizationSummary, error) {
 	var out APIOrganizationSummary
 	path := "/auth/api/v1/organizations/current"
