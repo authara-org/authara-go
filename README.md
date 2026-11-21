@@ -45,7 +45,7 @@ sessions, refresh logic, CSRF enforcement, and security invariants.
 
 - Provides **generated, side-effect-free HTTP helpers** for calling Authara
   endpoints from backend or SSR applications
-- Forwards existing authentication context (access cookie) only
+- Forwards existing authentication context (access cookie or bearer token)
 - Exposes API calls generated from the Authara OpenAPI contract
 
 These helpers are **strict by design**:
