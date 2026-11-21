@@ -62,6 +62,54 @@ func TestGeneratedCallForwardsCookiesAndCSRF(t *testing.T) {
 	}
 }
 
+func TestGeneratedCallForwardsPublicAuthTransport(t *testing.T) {
+	tests := []struct {
+		name              string
+		authorization     []string
+		accessCookie      string
+		wantAuthorization string
+		wantAccessCookie  string
+	}{
+		{name: "bearer", authorization: []string{"Bearer mobile-token"}, accessCookie: "browser-token", wantAuthorization: "Bearer mobile-token"},
+		{name: "cookie", accessCookie: "browser-token", wantAccessCookie: "browser-token"},
+		{name: "missing"},
+		{name: "malformed bearer does not fall back", authorization: []string{"Basic credentials"}, accessCookie: "browser-token"},
+		{name: "duplicate bearer does not fall back", authorization: []string{"Bearer first", "Bearer second"}, accessCookie: "browser-token"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if got := r.Header.Get("Authorization"); got != test.wantAuthorization {
+					t.Fatalf("Authorization = %q, want %q", got, test.wantAuthorization)
+				}
+				cookie, err := r.Cookie(AccessCookieName)
+				if test.wantAccessCookie == "" {
+					if err == nil {
+						t.Fatalf("unexpected access cookie %q", cookie.Value)
+					}
+				} else if err != nil || cookie.Value != test.wantAccessCookie {
+					t.Fatalf("access cookie = %v, %v; want %q", cookie, err, test.wantAccessCookie)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.Write([]byte(`{"members":[]}`))
+			})
+
+			client, _ := newTestClient(t, handler)
+			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			for _, authorization := range test.authorization {
+				request.Header.Add("Authorization", authorization)
+			}
+			if test.accessCookie != "" {
+				request.AddCookie(&http.Cookie{Name: AccessCookieName, Value: test.accessCookie})
+			}
+			if _, err := client.CallListCurrentOrganizationMembers(context.Background(), request, "", 20); err != nil {
+				t.Fatalf("CallListCurrentOrganizationMembers() error = %v", err)
+			}
+		})
+	}
+}
+
 func TestGeneratedInternalCallSendsBearerToken(t *testing.T) {
 	orgID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
 	actorID := uuid.MustParse("33333333-3333-3333-3333-333333333333")

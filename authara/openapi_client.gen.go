@@ -19,6 +19,18 @@ func apiRequestOptions(incoming *http.Request, cookies []string, csrf bool) []re
 				return
 			}
 			for _, name := range cookies {
+				if name != AccessCookieName {
+					continue
+				}
+				if _, present := incoming.Header["Authorization"]; present {
+					if token, source := accessTokenFromRequest(incoming); source == accessTokenFromBearer {
+						req.Header.Set("Authorization", "Bearer "+token)
+					}
+					return
+				}
+				break
+			}
+			for _, name := range cookies {
 				if cookie, err := incoming.Cookie(name); err == nil {
 					req.AddCookie(cookie)
 				}
