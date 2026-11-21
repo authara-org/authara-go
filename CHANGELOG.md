@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.1](https://github.com/authara-org/authara-go/compare/v0.27.0...v0.27.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* forward bearer auth in generated clients ([#41](https://github.com/authara-org/authara-go/issues/41)) ([73d8efd](https://github.com/authara-org/authara-go/commit/73d8efdaec2a714da7d2ba9111d8caa2d0e67bc5))
+
 ## [0.27.0](https://github.com/authara-org/authara-go/compare/v0.26.0...v0.27.0) (2026-11-21)
 
 
