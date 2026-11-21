@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/authara-org/authara-go/compare/v0.26.0...v0.27.0) (2026-11-21)
+
+
+### Features
+
+* **api:** generate client from authara-core v0.36.0 ([#39](https://github.com/authara-org/authara-go/issues/39)) ([29fe911](https://github.com/authara-org/authara-go/commit/29fe9116136f436df189e9124ae32d948a48aab3))
+
 ## [0.26.0](https://github.com/authara-org/authara-go/compare/v0.25.0...v0.26.0) (2026-11-20)
 
 
