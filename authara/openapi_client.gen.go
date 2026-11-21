@@ -820,6 +820,20 @@ func (c *Client) CallDeleteInternalOrganization(ctx context.Context, organizatio
 	return nil
 }
 
+func (c *Client) CallListInternalOrganizationInvitations(ctx context.Context, organizationID uuid.UUID, cursor string, limit int) (*APIOrganizationInvitations, error) {
+	var out APIOrganizationInvitations
+	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations"
+	query := url.Values{}
+	query.Set("cursor", cursor)
+	query.Set("limit", strconv.FormatInt(int64(limit), 10))
+	path += "?" + query.Encode()
+	err := c.internalJSON(ctx, http.MethodGet, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) CallCreateInternalOrganizationInvitation(ctx context.Context, organizationID uuid.UUID, body APIInternalCreateInvitationRequest) (*APIOrganizationInvitationEnvelope, error) {
 	var out APIOrganizationInvitationEnvelope
 	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations"
@@ -833,6 +847,16 @@ func (c *Client) CallCreateInternalOrganizationInvitation(ctx context.Context, o
 func (c *Client) CallResendInternalOrganizationInvitation(ctx context.Context, organizationID uuid.UUID, invitationID uuid.UUID) (*APIOrganizationInvitationEnvelope, error) {
 	var out APIOrganizationInvitationEnvelope
 	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations/" + url.PathEscape(invitationID.String()) + "/resend"
+	err := c.internalJSON(ctx, http.MethodPost, path, nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) CallRevokeInternalOrganizationInvitation(ctx context.Context, organizationID uuid.UUID, invitationID uuid.UUID) (*APIOrganizationInvitationEnvelope, error) {
+	var out APIOrganizationInvitationEnvelope
+	path := "/auth/internal/v1/organizations/" + url.PathEscape(organizationID.String()) + "/invitations/" + url.PathEscape(invitationID.String()) + "/revoke"
 	err := c.internalJSON(ctx, http.MethodPost, path, nil, &out)
 	if err != nil {
 		return nil, err
